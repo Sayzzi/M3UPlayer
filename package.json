@@ -1,0 +1,17 @@
+{
+  "name": "m3u-player",
+  "version": "1.0.0",
+  "description": "Electron IPTV M3U Player",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "node -e \"const fs=require('fs');const src='node_modules/hls.js/dist/hls.min.js';const dst='src/renderer/vendor/hls.min.js';if(fs.existsSync(src)){fs.mkdirSync('src/renderer/vendor',{recursive:true});fs.copyFileSync(src,dst);console.log('hls.min.js copied to vendor/');}else{console.warn('hls.js not found in node_modules');}\""
+  },
+  "dependencies": {
+    "electron-conf": "^1.3.0",
+    "hls.js": "^1.5.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
