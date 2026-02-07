@@ -51,13 +51,14 @@
   background: var(--bg-hover);
 }
 
-/* Video container */
+/* ─── Video container ─── */
 .player-video-container {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .player-video-container video {
@@ -66,7 +67,97 @@
   object-fit: contain;
 }
 
-/* Error overlay */
+/* ─── Controls overlay (inside video container) ─── */
+.player-controls-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* In normal (non-fullscreen) mode, overlay is always visible with no gradient */
+.player-controls-overlay .fs-channel-name {
+  display: none;
+}
+
+.player-controls-overlay .fs-bottom {
+  pointer-events: auto;
+}
+
+/* ─── Fullscreen mode ─── */
+.player-video-container:fullscreen {
+  aspect-ratio: unset;
+  width: 100vw;
+  height: 100vh;
+  cursor: none;
+}
+
+.player-video-container:fullscreen video {
+  width: 100%;
+  height: 100%;
+}
+
+/* Show cursor when controls visible */
+.player-video-container:fullscreen.controls-visible {
+  cursor: default;
+}
+
+/* Fullscreen overlay behavior */
+.player-video-container:fullscreen .player-controls-overlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.player-video-container:fullscreen.controls-visible .player-controls-overlay {
+  opacity: 1;
+}
+
+/* Channel name visible in fullscreen */
+.player-video-container:fullscreen .fs-channel-name {
+  display: block;
+  padding: 20px 24px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
+}
+
+/* Bottom section gradient in fullscreen */
+.player-video-container:fullscreen .fs-bottom {
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  padding-top: 30px;
+}
+
+/* In fullscreen, make controls bigger */
+.player-video-container:fullscreen .player-controls {
+  padding: 8px 20px 14px;
+  background: transparent;
+}
+
+.player-video-container:fullscreen .player-controls .btn-icon {
+  padding: 10px;
+}
+
+.player-video-container:fullscreen .player-controls .btn-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.player-video-container:fullscreen .player-seek {
+  padding: 4px 20px;
+  background: transparent;
+}
+
+.player-video-container:fullscreen .volume-slider {
+  width: 100px;
+}
+
+/* ─── Error overlay ─── */
 .player-error-overlay {
   position: absolute;
   inset: 0;
@@ -77,6 +168,7 @@
   background: rgba(0, 0, 0, 0.92);
   gap: 12px;
   color: var(--text-secondary);
+  z-index: 10;
 }
 
 .player-error-overlay svg {
@@ -144,6 +236,21 @@
   transform: scale(1.2);
 }
 
+/* Fullscreen seek bar colors */
+.player-video-container:fullscreen .seek-time-current,
+.player-video-container:fullscreen .seek-time-total {
+  color: rgba(255,255,255,0.7);
+}
+
+.player-video-container:fullscreen .seek-slider {
+  background: rgba(255,255,255,0.15);
+  height: 4px;
+}
+
+.player-video-container:fullscreen .seek-slider:hover {
+  height: 6px;
+}
+
 /* ─── Controls ─── */
 .player-controls {
   display: flex;
@@ -156,6 +263,15 @@
 
 .player-controls .btn-icon { color: var(--text-muted); }
 .player-controls .btn-icon:hover { color: var(--text-primary); }
+
+/* Fullscreen control colors */
+.player-video-container:fullscreen .player-controls .btn-icon {
+  color: rgba(255,255,255,0.7);
+}
+.player-video-container:fullscreen .player-controls .btn-icon:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
 
 .volume-slider {
   -webkit-appearance: none;
@@ -176,6 +292,10 @@
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
+}
+
+.player-video-container:fullscreen .volume-slider {
+  background: rgba(255,255,255,0.15);
 }
 
 .player-controls-spacer { flex: 1; }

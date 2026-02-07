@@ -14,8 +14,13 @@ M3U.PlayerPanel = class {
     this.channelNameEl = el.querySelector('.player-channel-name');
     this.errorOverlay = el.querySelector('.player-error-overlay');
     this.epgBar = el.querySelector('.player-epg-bar');
-    this.controlsEl = el.querySelector('.player-controls');
     this.channelInfoEl = el.querySelector('.player-channel-info');
+
+    // Video container (fullscreen target)
+    this.videoContainer = el.querySelector('.player-video-container');
+    this.controlsOverlay = el.querySelector('.player-controls-overlay');
+    this.controlsEl = el.querySelector('.player-controls');
+    this.fsChannelName = el.querySelector('.fs-channel-name');
 
     // Seek bar elements
     this.seekWrap = el.querySelector('#player-seek');
@@ -27,9 +32,14 @@ M3U.PlayerPanel = class {
     this.rewindBtn = el.querySelector('.ctrl-rewind');
     this.forwardBtn = el.querySelector('.ctrl-forward');
 
+    // Fullscreen auto-hide state
+    this._fsHideTimer = null;
+    this._fsControlsVisible = false;
+
     this.setupControls();
     this.setupSeek();
     this.setupKeyboard();
+    this.setupFullscreen();
   }
 
   setupControls() {
@@ -59,19 +69,91 @@ M3U.PlayerPanel = class {
     });
   }
 
+  /* ── Fullscreen ─────────────────────────────────────── */
+
+  setupFullscreen() {
+    // Double-click video to toggle fullscreen
+    this.videoContainer.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.fs-bottom')) return;
+      this.toggleFullscreen();
+    });
+
+    // Single click to toggle play/pause (only in fullscreen)
+    this.videoContainer.addEventListener('click', (e) => {
+      if (e.target.closest('.fs-bottom')) return;
+      if (e.target.closest('.player-error-overlay')) return;
+      if (document.fullscreenElement) {
+        this.togglePlayPause();
+        this._showFsControls();
+      }
+    });
+
+    // Mouse move in fullscreen → show controls
+    this.videoContainer.addEventListener('mousemove', () => {
+      if (document.fullscreenElement) {
+        this._showFsControls();
+      }
+    });
+
+    // Keep controls visible when hovering over them
+    const fsBottom = this.controlsOverlay?.querySelector('.fs-bottom');
+    if (fsBottom) {
+      fsBottom.addEventListener('mouseenter', () => {
+        if (document.fullscreenElement) this._clearFsHideTimer();
+      });
+      fsBottom.addEventListener('mouseleave', () => {
+        if (document.fullscreenElement) this._scheduleFsHide();
+      });
+    }
+
+    // Listen for fullscreen changes
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) {
+        this._showFsControls();
+      } else {
+        this._clearFsHideTimer();
+        this.videoContainer.classList.remove('controls-visible');
+      }
+    });
+  }
+
+  _showFsControls() {
+    this.videoContainer.classList.add('controls-visible');
+    this._fsControlsVisible = true;
+    this._clearFsHideTimer();
+    this._scheduleFsHide();
+  }
+
+  _hideFsControls() {
+    if (this._isSeeking) return;
+    if (this.video.paused) return; // Keep visible when paused
+    this.videoContainer.classList.remove('controls-visible');
+    this._fsControlsVisible = false;
+  }
+
+  _scheduleFsHide() {
+    this._clearFsHideTimer();
+    this._fsHideTimer = setTimeout(() => this._hideFsControls(), 3000);
+  }
+
+  _clearFsHideTimer() {
+    if (this._fsHideTimer) {
+      clearTimeout(this._fsHideTimer);
+      this._fsHideTimer = null;
+    }
+  }
+
   /* ── Seek bar ─────────────────────────────────────────── */
 
   setupSeek() {
     if (!this.seekSlider) return;
 
-    // While user drags the slider, pause seek updates
     this.seekSlider.addEventListener('input', () => {
       this._isSeeking = true;
       const t = (parseFloat(this.seekSlider.value) / 100) * (this.video.duration || 0);
       this.seekCurrent.textContent = this._fmtTime(t);
     });
 
-    // When user releases slider, seek to position
     this.seekSlider.addEventListener('change', () => {
       const pct = parseFloat(this.seekSlider.value) / 100;
       const dur = this.video.duration || 0;
@@ -81,7 +163,6 @@ M3U.PlayerPanel = class {
       this._isSeeking = false;
     });
 
-    // Rewind / Forward
     this.rewindBtn?.addEventListener('click', () => {
       if (this.video.duration && isFinite(this.video.duration)) {
         this.video.currentTime = Math.max(0, this.video.currentTime - 10);
@@ -154,10 +235,12 @@ M3U.PlayerPanel = class {
         case ' ':
           e.preventDefault();
           this.togglePlayPause();
+          if (document.fullscreenElement) this._showFsControls();
           break;
         case 'm':
         case 'M':
           this.toggleMute();
+          if (document.fullscreenElement) this._showFsControls();
           break;
         case 'f':
         case 'F':
@@ -168,12 +251,29 @@ M3U.PlayerPanel = class {
           if (this.video.duration && isFinite(this.video.duration)) {
             this.video.currentTime = Math.max(0, this.video.currentTime - 10);
           }
+          if (document.fullscreenElement) this._showFsControls();
           break;
         case 'ArrowRight':
           e.preventDefault();
           if (this.video.duration && isFinite(this.video.duration)) {
             this.video.currentTime = Math.min(this.video.duration, this.video.currentTime + 10);
           }
+          if (document.fullscreenElement) this._showFsControls();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.video.volume = Math.min(1, this.video.volume + 0.05);
+          this.video.muted = false;
+          if (this.volumeSlider) this.volumeSlider.value = this.video.volume;
+          this.updateVolumeIcon();
+          if (document.fullscreenElement) this._showFsControls();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.video.volume = Math.max(0, this.video.volume - 0.05);
+          if (this.volumeSlider) this.volumeSlider.value = this.video.volume;
+          this.updateVolumeIcon();
+          if (document.fullscreenElement) this._showFsControls();
           break;
         case 'Escape':
           if (document.fullscreenElement) {
@@ -196,23 +296,25 @@ M3U.PlayerPanel = class {
     this.el.classList.remove('hidden');
     document.querySelector('.app-container').classList.add('player-open');
 
+    // Update fullscreen channel name overlay
+    if (this.fsChannelName) {
+      this.fsChannelName.textContent = channel.name;
+    }
+
     const url = channel.url;
     const isLive = channel.type === 'live';
     const isHlsUrl = url.includes('.m3u8');
     const isDirectFile = /\.(mp4|mkv|avi|mov|wmv|flv|webm|mpg|mpeg)(\?|$)/i.test(url);
     const isVod = !isLive;
 
-    // Show/hide seek bar based on content type
     this._showSeek(isVod);
 
-    // Reset seek slider
     if (this.seekSlider) {
       this.seekSlider.value = 0;
       this.seekCurrent.textContent = '0:00';
       this.seekTotal.textContent = '0:00';
     }
 
-    // Use HLS.js for: explicit .m3u8, live streams (Xtream live = TS/HLS without extension)
     const useHls = Hls.isSupported() && (isHlsUrl || isLive || !isDirectFile);
 
     if (useHls) {
@@ -303,6 +405,7 @@ M3U.PlayerPanel = class {
       this._manifestTimeout = null;
     }
     this._stopSeekUpdate();
+    this._clearFsHideTimer();
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;
@@ -313,6 +416,14 @@ M3U.PlayerPanel = class {
   }
 
   close() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().then(() => this._doClose()).catch(() => this._doClose());
+    } else {
+      this._doClose();
+    }
+  }
+
+  _doClose() {
     this.stop();
     this.currentChannel = null;
     this.el.classList.add('hidden');
@@ -335,11 +446,10 @@ M3U.PlayerPanel = class {
   }
 
   toggleFullscreen() {
-    const container = this.el.querySelector('.player-video-container');
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
-      container.requestFullscreen().catch(() => {});
+      this.videoContainer.requestFullscreen().catch(() => {});
     }
   }
 
