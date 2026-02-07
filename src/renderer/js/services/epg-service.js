@@ -4,12 +4,38 @@ M3U.EpgService = class {
   constructor() {
     this.data = null;
     this.refreshInterval = null;
+    this._url = null;
   }
 
   async load(url) {
     if (!url) return null;
     try {
-      this.data = await window.electronAPI.loadEpg(url);
+      // Fetch EPG XML from renderer (Chromium fetch) to bypass Cloudflare
+      const resp = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': '*/*',
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      let xmlText;
+      // Check if response is gzipped (some EPG servers gzip without proper headers)
+      const buffer = await resp.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      if (bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+        // Gzipped - decompress using DecompressionStream
+        const ds = new DecompressionStream('gzip');
+        const decompressedStream = new Blob([buffer]).stream().pipeThrough(ds);
+        const decompressedBlob = await new Response(decompressedStream).blob();
+        xmlText = await decompressedBlob.text();
+      } else {
+        xmlText = new TextDecoder('utf-8').decode(bytes);
+      }
+
+      // Parse in main process
+      this.data = await window.electronAPI.parseEpg(xmlText);
       this._url = url;
       this.startAutoRefresh();
       M3U.dom.dispatch('epg-loaded', { epgData: this.data });
@@ -24,7 +50,7 @@ M3U.EpgService = class {
     this.stopAutoRefresh();
     this.refreshInterval = setInterval(() => {
       if (this._url) this.load(this._url);
-    }, 6 * 3600 * 1000); // 6 hours
+    }, 6 * 3600 * 1000);
   }
 
   stopAutoRefresh() {

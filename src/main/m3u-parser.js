@@ -30,7 +30,8 @@ function parseM3U(text) {
         name: currentAttrs.name,
         logo: currentAttrs.logo,
         group: currentAttrs.group || 'Non classé',
-        url: line
+        url: line,
+        type: 'live'
       };
       channels.push(channel);
       groupSet.add(channel.group);

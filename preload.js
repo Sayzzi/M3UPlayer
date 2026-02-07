@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Playlist operations
   loadPlaylist: (url) => ipcRenderer.invoke('playlist:load', url),
   getPlaylists: () => ipcRenderer.invoke('playlist:getAll'),
-  addPlaylist: (url, name) => ipcRenderer.invoke('playlist:add', url, name),
+  addPlaylist: (url, name, type, xtreamData) => ipcRenderer.invoke('playlist:add', url, name, type, xtreamData),
   removePlaylist: (id) => ipcRenderer.invoke('playlist:remove', id),
   setActivePlaylist: (id) => ipcRenderer.invoke('playlist:setActive', id),
   getActivePlaylistId: () => ipcRenderer.invoke('playlist:getActiveId'),
@@ -17,8 +17,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getHistory: () => ipcRenderer.invoke('history:get'),
   addToHistory: (entry) => ipcRenderer.invoke('history:add', entry),
 
+  // Parse M3U text (fetched from renderer)
+  parsePlaylist: (text) => ipcRenderer.invoke('playlist:parse', text),
+
+  // Xtream Codes
+  loadXtream: (server, username, password) => ipcRenderer.invoke('xtream:load', server, username, password),
+
   // EPG
   loadEpg: (url) => ipcRenderer.invoke('epg:load', url),
+  parseEpg: (xmlText) => ipcRenderer.invoke('epg:parse', xmlText),
 
   // Settings
   getSettings: () => ipcRenderer.invoke('settings:get'),

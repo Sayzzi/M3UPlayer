@@ -4,13 +4,14 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  background: var(--bg-secondary);
 }
 
 .content-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 10px 20px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
 }
@@ -27,11 +28,6 @@
   margin-left: 8px;
 }
 
-.content-actions {
-  display: flex;
-  gap: 4px;
-}
-
 .channel-scroll {
   flex: 1;
   overflow-y: auto;
@@ -41,14 +37,20 @@
 /* Grid View */
 .channel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 10px;
+}
+
+/* Poster grid for VOD/Series */
+.channel-grid.poster-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
 }
 
 .channel-card {
   background: var(--bg-tertiary);
   border-radius: var(--radius);
-  padding: 16px 12px;
+  padding: 14px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -62,18 +64,68 @@
 .channel-card:hover {
   background: var(--bg-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--shadow);
-  border-color: var(--border);
+  box-shadow: 0 6px 20px var(--shadow);
+  border-color: var(--border-light);
 }
 
 .channel-card.playing {
   border-color: var(--accent);
-  background: rgba(233, 69, 96, 0.08);
+  background: var(--accent-dim);
 }
 
+/* Poster Card */
+.channel-card.poster-card {
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.channel-card.poster-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px var(--shadow);
+}
+
+.poster-wrap {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: var(--bg-hover);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster-fallback {
+  font-size: 32px !important;
+  color: var(--text-muted) !important;
+}
+
+.card-info {
+  padding: 8px 10px 10px;
+  width: 100%;
+}
+
+.card-info .channel-name {
+  text-align: left;
+  font-size: 12px;
+}
+
+.card-rating {
+  font-size: 11px;
+  color: var(--warning);
+  margin-top: 3px;
+}
+
+/* Channel Logo */
 .channel-logo-wrap {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   overflow: hidden;
   background: var(--bg-secondary);
@@ -90,7 +142,7 @@
 }
 
 .channel-logo-fallback {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--accent);
 }
@@ -133,6 +185,7 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
+  z-index: 2;
 }
 
 .channel-card:hover .channel-fav-btn,
@@ -142,12 +195,10 @@
 
 .channel-fav-btn:hover {
   color: var(--warning);
-  background: rgba(243, 156, 18, 0.15);
+  background: rgba(241, 196, 15, 0.15);
 }
 
-.channel-fav-btn.is-fav {
-  color: var(--warning);
-}
+.channel-fav-btn.is-fav { color: var(--warning); }
 
 /* List View */
 .channel-list {
@@ -166,12 +217,10 @@
   transition: all var(--transition);
 }
 
-.channel-row:hover {
-  background: var(--bg-hover);
-}
+.channel-row:hover { background: var(--bg-hover); }
 
 .channel-row.playing {
-  background: rgba(233, 69, 96, 0.08);
+  background: var(--accent-dim);
   border-left: 3px solid var(--accent);
 }
 
@@ -180,9 +229,7 @@
   height: 36px;
 }
 
-.channel-row .channel-logo-fallback {
-  font-size: 14px;
-}
+.channel-row .channel-logo-fallback { font-size: 14px; }
 
 .channel-row .channel-name {
   text-align: left;

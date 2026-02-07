@@ -18,10 +18,17 @@ function getPlaylists() {
   return store.get('playlists') || [];
 }
 
-function addPlaylist(url, name) {
+function addPlaylist(url, name, type = 'm3u', xtreamData = null) {
   const playlists = getPlaylists();
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const entry = { id, name, url, addedAt: Date.now() };
+  const entry = { id, name, url, type, addedAt: Date.now() };
+  if (type === 'xtream' && xtreamData) {
+    entry.xtream = {
+      server: xtreamData.server,
+      username: xtreamData.username,
+      password: xtreamData.password
+    };
+  }
   playlists.push(entry);
   store.set('playlists', playlists);
   return entry;

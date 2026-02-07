@@ -8,6 +8,8 @@ M3U.PlayerPanel = class {
     this.hls = null;
     this.currentChannel = null;
     this.epgInterval = null;
+    this._seekRaf = null;
+    this._isSeeking = false;
 
     this.channelNameEl = el.querySelector('.player-channel-name');
     this.errorOverlay = el.querySelector('.player-error-overlay');
@@ -15,7 +17,18 @@ M3U.PlayerPanel = class {
     this.controlsEl = el.querySelector('.player-controls');
     this.channelInfoEl = el.querySelector('.player-channel-info');
 
+    // Seek bar elements
+    this.seekWrap = el.querySelector('#player-seek');
+    this.seekSlider = el.querySelector('.seek-slider');
+    this.seekCurrent = el.querySelector('.seek-time-current');
+    this.seekTotal = el.querySelector('.seek-time-total');
+
+    // Rewind / Forward buttons
+    this.rewindBtn = el.querySelector('.ctrl-rewind');
+    this.forwardBtn = el.querySelector('.ctrl-forward');
+
     this.setupControls();
+    this.setupSeek();
     this.setupKeyboard();
   }
 
@@ -36,12 +49,101 @@ M3U.PlayerPanel = class {
     this.fullscreenBtn?.addEventListener('click', () => this.toggleFullscreen());
     closeBtn?.addEventListener('click', () => this.close());
 
+    this.video.addEventListener('play', () => this.updatePlayPauseIcon());
+    this.video.addEventListener('pause', () => this.updatePlayPauseIcon());
+
     // Sync initial volume
     window.electronAPI.getSettings().then(s => {
       this.video.volume = s.volume || 0.8;
       if (this.volumeSlider) this.volumeSlider.value = this.video.volume;
     });
   }
+
+  /* ── Seek bar ─────────────────────────────────────────── */
+
+  setupSeek() {
+    if (!this.seekSlider) return;
+
+    // While user drags the slider, pause seek updates
+    this.seekSlider.addEventListener('input', () => {
+      this._isSeeking = true;
+      const t = (parseFloat(this.seekSlider.value) / 100) * (this.video.duration || 0);
+      this.seekCurrent.textContent = this._fmtTime(t);
+    });
+
+    // When user releases slider, seek to position
+    this.seekSlider.addEventListener('change', () => {
+      const pct = parseFloat(this.seekSlider.value) / 100;
+      const dur = this.video.duration || 0;
+      if (dur && isFinite(dur)) {
+        this.video.currentTime = pct * dur;
+      }
+      this._isSeeking = false;
+    });
+
+    // Rewind / Forward
+    this.rewindBtn?.addEventListener('click', () => {
+      if (this.video.duration && isFinite(this.video.duration)) {
+        this.video.currentTime = Math.max(0, this.video.currentTime - 10);
+      }
+    });
+    this.forwardBtn?.addEventListener('click', () => {
+      if (this.video.duration && isFinite(this.video.duration)) {
+        this.video.currentTime = Math.min(this.video.duration, this.video.currentTime + 10);
+      }
+    });
+  }
+
+  _showSeek(isVod) {
+    if (isVod) {
+      this.seekWrap?.classList.remove('hidden');
+      this.rewindBtn?.classList.remove('hidden');
+      this.forwardBtn?.classList.remove('hidden');
+      this.epgBar?.classList.add('hidden');
+      this._startSeekUpdate();
+    } else {
+      this.seekWrap?.classList.add('hidden');
+      this.rewindBtn?.classList.add('hidden');
+      this.forwardBtn?.classList.add('hidden');
+      this.epgBar?.classList.remove('hidden');
+      this._stopSeekUpdate();
+    }
+  }
+
+  _startSeekUpdate() {
+    this._stopSeekUpdate();
+    const update = () => {
+      if (!this._isSeeking && this.video.duration && isFinite(this.video.duration)) {
+        const pct = (this.video.currentTime / this.video.duration) * 100;
+        this.seekSlider.value = pct;
+        this.seekCurrent.textContent = this._fmtTime(this.video.currentTime);
+        this.seekTotal.textContent = this._fmtTime(this.video.duration);
+      }
+      this._seekRaf = requestAnimationFrame(update);
+    };
+    this._seekRaf = requestAnimationFrame(update);
+  }
+
+  _stopSeekUpdate() {
+    if (this._seekRaf) {
+      cancelAnimationFrame(this._seekRaf);
+      this._seekRaf = null;
+    }
+  }
+
+  _fmtTime(sec) {
+    if (!sec || !isFinite(sec)) return '0:00';
+    sec = Math.floor(sec);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) {
+      return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  /* ── Keyboard ─────────────────────────────────────────── */
 
   setupKeyboard() {
     document.addEventListener('keydown', (e) => {
@@ -61,6 +163,18 @@ M3U.PlayerPanel = class {
         case 'F':
           this.toggleFullscreen();
           break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (this.video.duration && isFinite(this.video.duration)) {
+            this.video.currentTime = Math.max(0, this.video.currentTime - 10);
+          }
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (this.video.duration && isFinite(this.video.duration)) {
+            this.video.currentTime = Math.min(this.video.duration, this.video.currentTime + 10);
+          }
+          break;
         case 'Escape':
           if (document.fullscreenElement) {
             document.exitFullscreen();
@@ -72,6 +186,8 @@ M3U.PlayerPanel = class {
     });
   }
 
+  /* ── Playback ─────────────────────────────────────────── */
+
   play(channel) {
     this.stop();
     this.currentChannel = channel;
@@ -81,48 +197,28 @@ M3U.PlayerPanel = class {
     document.querySelector('.app-container').classList.add('player-open');
 
     const url = channel.url;
-    const isHls = url.includes('.m3u8') || url.includes('m3u8');
+    const isLive = channel.type === 'live';
+    const isHlsUrl = url.includes('.m3u8');
+    const isDirectFile = /\.(mp4|mkv|avi|mov|wmv|flv|webm|mpg|mpeg)(\?|$)/i.test(url);
+    const isVod = !isLive;
 
-    if (isHls && Hls.isSupported()) {
-      this.hls = new Hls({
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
-        enableWorker: true
-      });
-      this.hls.loadSource(url);
-      this.hls.attachMedia(this.video);
-      this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        this.video.play().catch(() => {});
-      });
-      this.hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              setTimeout(() => {
-                if (this.hls) this.hls.startLoad();
-              }, 3000);
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              if (this.hls) this.hls.recoverMediaError();
-              break;
-            default:
-              this.showError('Stream unavailable. Please try another channel.');
-              break;
-          }
-        }
-      });
+    // Show/hide seek bar based on content type
+    this._showSeek(isVod);
 
-      // Timeout if no manifest parsed
-      this._manifestTimeout = setTimeout(() => {
-        if (this.hls && !this.video.readyState) {
-          this.showError('Stream timed out. The channel may be offline.');
-        }
-      }, 15000);
+    // Reset seek slider
+    if (this.seekSlider) {
+      this.seekSlider.value = 0;
+      this.seekCurrent.textContent = '0:00';
+      this.seekTotal.textContent = '0:00';
+    }
+
+    // Use HLS.js for: explicit .m3u8, live streams (Xtream live = TS/HLS without extension)
+    const useHls = Hls.isSupported() && (isHlsUrl || isLive || !isDirectFile);
+
+    if (useHls) {
+      this._playWithHls(url, isDirectFile);
     } else {
-      this.video.src = url;
-      this.video.play().catch(() => {
-        this.showError('Unable to play this stream.');
-      });
+      this._playDirect(url);
     }
 
     this.updateChannelInfo(channel);
@@ -131,11 +227,82 @@ M3U.PlayerPanel = class {
     this.updatePlayPauseIcon();
   }
 
+  _playWithHls(url, canFallbackDirect) {
+    this.hls = new Hls({
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      enableWorker: true
+    });
+    this.hls.loadSource(url);
+    this.hls.attachMedia(this.video);
+    this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      this.video.play().catch(() => {});
+    });
+    this.hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) {
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            if (!this._hlsRetried) {
+              this._hlsRetried = true;
+              setTimeout(() => {
+                if (this.hls) this.hls.startLoad();
+              }, 2000);
+            } else if (canFallbackDirect) {
+              this._fallbackDirect(url);
+            } else {
+              this.showError('Stream unavailable. Check your connection.');
+            }
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            if (this.hls) this.hls.recoverMediaError();
+            break;
+          default:
+            if (canFallbackDirect) {
+              this._fallbackDirect(url);
+            } else {
+              this.showError('Stream unavailable. Please try another channel.');
+            }
+            break;
+        }
+      }
+    });
+
+    this._hlsRetried = false;
+    this._manifestTimeout = setTimeout(() => {
+      if (this.hls && !this.video.readyState) {
+        this._fallbackDirect(url);
+      }
+    }, 12000);
+  }
+
+  _playDirect(url) {
+    this.video.src = url;
+    this.video.play().catch(() => {
+      this.showError('Unable to play this stream.');
+    });
+  }
+
+  _fallbackDirect(url) {
+    if (this._manifestTimeout) {
+      clearTimeout(this._manifestTimeout);
+      this._manifestTimeout = null;
+    }
+    if (this.hls) {
+      this.hls.destroy();
+      this.hls = null;
+    }
+    this.video.src = url;
+    this.video.play().catch(() => {
+      this.showError('Unable to play this stream.');
+    });
+  }
+
   stop() {
     if (this._manifestTimeout) {
       clearTimeout(this._manifestTimeout);
       this._manifestTimeout = null;
     }
+    this._stopSeekUpdate();
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;
@@ -188,7 +355,6 @@ M3U.PlayerPanel = class {
     this.muteBtn.innerHTML = M3U.dom.svgIcon(
       this.video.muted ? M3U.icons.volumeX : M3U.icons.volume2
     );
-    // Save volume
     window.electronAPI.updateSettings({ volume: this.video.volume });
   }
 
