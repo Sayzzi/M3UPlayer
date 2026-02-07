@@ -130,4 +130,7 @@ window.M3U = window.M3U || {};
   } else if (playlists.length === 0) {
     modalManager.showAddPlaylist();
   }
+
+  // Signal main process that app is ready (closes splash screen)
+  window.electronAPI.appReady();
 })();

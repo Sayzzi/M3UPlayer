@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="48" fill="#0c0c14"/>
+  <rect x="16" y="16" width="224" height="224" rx="40" fill="#12121e"/>
+
+  <!-- TV Shape -->
+  <rect x="48" y="82" width="160" height="120" rx="16" fill="#1a1a2e" stroke="#e94560" stroke-width="4"/>
+
+  <!-- Screen -->
+  <rect x="60" y="94" width="136" height="96" rx="8" fill="#0c0c14"/>
+
+  <!-- Play Button -->
+  <polygon points="108,122 108,162 148,142" fill="#e94560"/>
+
+  <!-- Antenna -->
+  <line x1="100" y1="82" x2="128" y2="54" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+  <line x1="156" y1="82" x2="128" y2="54" stroke="#e94560" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="128" cy="52" r="4" fill="#e94560"/>
+</svg>

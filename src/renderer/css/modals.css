@@ -1,8 +1,9 @@
+/* ─── Modal Backdrop ─── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,26 +11,25 @@
   animation: fadeIn 0.15s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+/* ─── Modal Box ─── */
 .modal {
+  width: 460px;
+  max-height: 80vh;
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
-  width: 460px;
-  max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
   animation: slideUp 0.2s ease;
+  overflow: hidden;
 }
 
 @keyframes slideUp {
-  from { transform: translateY(16px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal-header {
@@ -42,15 +42,16 @@
 }
 
 .modal-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.2px;
 }
 
 .modal-close-btn {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: var(--radius-sm);
@@ -66,8 +67,8 @@
 
 .modal-body {
   padding: 20px;
-  overflow-y: auto;
   flex: 1;
+  overflow-y: auto;
 }
 
 .modal-footer {
@@ -79,28 +80,29 @@
   flex-shrink: 0;
 }
 
-/* Tab bar */
+/* ─── Tab Bar ─── */
 .tab-bar {
   display: flex;
   border-bottom: 1px solid var(--border);
+  padding: 0 20px;
   flex-shrink: 0;
 }
 
 .tab-btn {
-  flex: 1;
   padding: 10px 16px;
-  background: none;
   border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-secondary);
+  background: transparent;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  border-bottom: 2px solid transparent;
   transition: all var(--transition);
+  margin-bottom: -1px;
 }
 
 .tab-btn:hover {
-  color: var(--text-primary);
+  color: var(--text-secondary);
   background: var(--bg-hover);
 }
 
@@ -109,20 +111,19 @@
   border-bottom-color: var(--accent);
 }
 
-.tab-panel.hidden { display: none; }
-
-/* Form fields */
-.form-group { margin-bottom: 14px; }
-.form-group:last-child { margin-bottom: 0; }
+/* ─── Form Elements ─── */
+.form-group {
+  margin-bottom: 16px;
+}
 
 .form-label {
   display: block;
   font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
 }
 
 .form-input {
@@ -131,15 +132,19 @@
   border: 1px solid var(--border);
   color: var(--text-primary);
   padding: 10px 14px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: 13px;
   outline: none;
-  transition: border-color var(--transition);
+  transition: all var(--transition);
 }
 
-.form-input:focus { border-color: var(--accent); }
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  background: var(--bg-elevated);
+}
 
-/* Playlist list */
+/* ─── Playlist Items ─── */
 .playlist-list {
   display: flex;
   flex-direction: column;
@@ -149,22 +154,32 @@
 .playlist-item {
   display: flex;
   align-items: center;
-  gap: 12px;
   padding: 10px 12px;
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
   border: 1px solid transparent;
+  border-radius: var(--radius-md);
   transition: all var(--transition);
+  gap: 10px;
 }
 
-.playlist-item:hover { border-color: var(--border-light); }
-.playlist-item.active { border-color: var(--accent); }
+.playlist-item:hover {
+  border-color: var(--border-light);
+  background: var(--bg-elevated);
+}
 
-.playlist-item-info { flex: 1; min-width: 0; }
+.playlist-item.active {
+  border-color: var(--border-accent);
+  background: var(--accent-dim);
+}
+
+.playlist-item-info {
+  flex: 1;
+  min-width: 0;
+}
 
 .playlist-item-name {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,15 +201,85 @@
   flex-shrink: 0;
 }
 
-/* Toast */
+/* ─── Series Episode List ─── */
+.season-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.season-tab {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.season-tab:hover {
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+.season-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.episode-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.episode-item:hover { background: var(--bg-hover); }
+
+.episode-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 28px;
+}
+
+.episode-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.episode-duration {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ─── Toast Notifications ─── */
 .toast-container {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 2000;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 8px;
+  z-index: 2000;
+  pointer-events: none;
 }
 
 .toast {
@@ -202,20 +287,22 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: var(--bg-tertiary);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px var(--shadow);
-  animation: toastIn 0.3s ease;
-  max-width: 340px;
-  font-size: 13px;
   color: var(--text-primary);
+  font-size: 13px;
+  max-width: 360px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toastIn 0.3s ease;
+  backdrop-filter: blur(12px);
 }
 
-.toast.toast-error { border-color: var(--error); }
-.toast.toast-success { border-color: var(--success); }
+.toast-error { border-color: var(--error); }
+.toast-success { border-color: var(--success); }
 
-.toast-exit { animation: toastOut 0.2s ease forwards; }
+.toast.removing { animation: toastOut 0.2s ease forwards; }
 
 @keyframes toastIn {
   from { transform: translateX(100%); opacity: 0; }

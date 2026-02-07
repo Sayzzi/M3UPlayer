@@ -1,3 +1,4 @@
+/* ─── Content Area ─── */
 .content {
   grid-area: content;
   display: flex;
@@ -11,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 12px 24px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
 }
@@ -20,6 +21,7 @@
   font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.2px;
 }
 
 .content-count {
@@ -31,26 +33,26 @@
 .channel-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 16px 24px;
 }
 
-/* Grid View */
+/* ─── Grid View ─── */
 .channel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
 }
 
-/* Poster grid for VOD/Series */
 .channel-grid.poster-grid {
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
 }
 
+/* ─── Channel Card ─── */
 .channel-card {
   background: var(--bg-tertiary);
   border-radius: var(--radius);
-  padding: 14px 10px;
+  padding: 16px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -62,18 +64,21 @@
 }
 
 .channel-card:hover {
-  background: var(--bg-hover);
+  background: var(--bg-elevated);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px var(--shadow);
+  box-shadow: var(--shadow-md);
   border-color: var(--border-light);
 }
 
+.channel-card:active { transform: translateY(0); }
+
 .channel-card.playing {
-  border-color: var(--accent);
+  border-color: var(--border-accent);
   background: var(--accent-dim);
+  box-shadow: var(--shadow-accent);
 }
 
-/* Poster Card */
+/* ─── Poster Card (VOD/Series) ─── */
 .channel-card.poster-card {
   padding: 0;
   overflow: hidden;
@@ -82,13 +87,13 @@
 
 .channel-card.poster-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px var(--shadow);
+  box-shadow: var(--shadow-lg);
 }
 
 .poster-wrap {
   width: 100%;
   aspect-ratio: 2/3;
-  background: var(--bg-hover);
+  background: var(--bg-elevated);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -99,6 +104,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.channel-card.poster-card:hover .poster-wrap img {
+  transform: scale(1.05);
 }
 
 .poster-fallback {
@@ -122,17 +132,18 @@
   margin-top: 3px;
 }
 
-/* Channel Logo */
+/* ─── Channel Logo ─── */
 .channel-logo-wrap {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid var(--border);
 }
 
 .channel-logo-wrap img {
@@ -142,7 +153,7 @@
 }
 
 .channel-logo-fallback {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--accent);
 }
@@ -158,6 +169,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   width: 100%;
+  color: var(--text-primary);
 }
 
 .channel-epg-now {
@@ -170,11 +182,12 @@
   width: 100%;
 }
 
+/* ─── Favorite Button ─── */
 .channel-fav-btn {
   position: absolute;
   top: 6px;
   right: 6px;
-  background: none;
+  background: rgba(0,0,0,0.5);
   border: none;
   cursor: pointer;
   color: var(--text-muted);
@@ -186,6 +199,7 @@
   justify-content: center;
   opacity: 0;
   z-index: 2;
+  backdrop-filter: blur(4px);
 }
 
 .channel-card:hover .channel-fav-btn,
@@ -195,12 +209,12 @@
 
 .channel-fav-btn:hover {
   color: var(--warning);
-  background: rgba(241, 196, 15, 0.15);
+  background: rgba(251, 191, 36, 0.15);
 }
 
 .channel-fav-btn.is-fav { color: var(--warning); }
 
-/* List View */
+/* ─── List View ─── */
 .channel-list {
   display: flex;
   flex-direction: column;
@@ -212,7 +226,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition);
 }
@@ -241,7 +255,7 @@
 .channel-row .channel-group-badge {
   font-size: 11px;
   color: var(--text-muted);
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   padding: 2px 8px;
   border-radius: 10px;
   white-space: nowrap;
@@ -256,6 +270,7 @@
   position: static;
   opacity: 0;
   flex-shrink: 0;
+  background: transparent;
 }
 
 .channel-row:hover .channel-fav-btn,

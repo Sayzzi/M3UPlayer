@@ -29,5 +29,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
-  updateSettings: (settings) => ipcRenderer.invoke('settings:update', settings)
+  updateSettings: (settings) => ipcRenderer.invoke('settings:update', settings),
+
+  // App lifecycle
+  appReady: () => ipcRenderer.send('app:ready')
 });
