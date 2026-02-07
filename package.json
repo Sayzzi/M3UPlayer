@@ -42,7 +42,8 @@
           ]
         }
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": true,
