@@ -783,6 +783,34 @@ M3U.PlayerPanel = class {
     // Separator
     menu.appendChild(M3U.dom.el('div', { className: 'subtitle-menu-sep' }));
 
+    // Auto search options (for VOD/Series only)
+    const isVod = this.currentChannel?.type === 'vod' || this.currentChannel?.type === 'series';
+    if (isVod && this.currentChannel?.name) {
+      // French subtitles
+      const frItem = M3U.dom.el('div', {
+        className: 'subtitle-menu-item subtitle-auto',
+        textContent: '🔍 Rechercher (Français)',
+        onClick: () => {
+          this._closeSubtitleMenu();
+          this.searchAndLoadSubtitles('fr');
+        }
+      });
+      menu.appendChild(frItem);
+
+      // English subtitles
+      const enItem = M3U.dom.el('div', {
+        className: 'subtitle-menu-item subtitle-auto',
+        textContent: '🔍 Search (English)',
+        onClick: () => {
+          this._closeSubtitleMenu();
+          this.searchAndLoadSubtitles('en');
+        }
+      });
+      menu.appendChild(enItem);
+
+      menu.appendChild(M3U.dom.el('div', { className: 'subtitle-menu-sep' }));
+    }
+
     // Load file option
     const loadItem = M3U.dom.el('div', {
       className: 'subtitle-menu-item subtitle-load',
@@ -946,5 +974,62 @@ M3U.PlayerPanel = class {
     loadedTracks.forEach((track) => track.remove());
     this._subtitlesEnabled = false;
     this.subtitlesBtn?.classList.remove('active');
+  }
+
+  async searchAndLoadSubtitles(language = 'fr') {
+    if (!this.currentChannel?.name) {
+      M3U.toast?.show('No content playing', 'error');
+      return;
+    }
+
+    const langName = language === 'fr' ? 'français' : 'English';
+    M3U.toast?.show(`Searching subtitles (${langName})...`, 'info');
+
+    try {
+      const result = await window.electronAPI.fetchSubtitle(
+        this.currentChannel.name,
+        language,
+        this.currentChannel.type
+      );
+
+      if (result && result.content) {
+        // Convert SRT to VTT
+        const vttContent = this._srtToVtt(result.content);
+
+        // Remove existing loaded subtitles
+        const existingTrack = this.video.querySelector('track[data-loaded]');
+        if (existingTrack) {
+          existingTrack.remove();
+        }
+
+        // Create blob URL
+        const blob = new Blob([vttContent], { type: 'text/vtt' });
+        const url = URL.createObjectURL(blob);
+
+        // Add track
+        const track = document.createElement('track');
+        track.kind = 'subtitles';
+        track.label = `${langName} (auto)`;
+        track.srclang = language;
+        track.src = url;
+        track.dataset.loaded = 'true';
+        track.default = true;
+
+        this.video.appendChild(track);
+
+        track.addEventListener('load', () => {
+          const tracks = this._getSubtitleTracks();
+          const idx = tracks.findIndex((t) => t.label === track.label);
+          if (idx !== -1) {
+            this.selectSubtitleTrack(idx);
+          }
+        });
+
+        M3U.toast?.show(`Subtitles loaded (${langName})`, 'success');
+      }
+    } catch (err) {
+      console.error('Failed to fetch subtitles:', err);
+      M3U.toast?.show(`No subtitles found (${langName})`, 'warning');
+    }
   }
 };

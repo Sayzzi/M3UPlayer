@@ -526,6 +526,15 @@
   background: var(--accent-dim);
 }
 
+.subtitle-menu-item.subtitle-auto {
+  color: var(--accent2);
+}
+
+.subtitle-menu-item.subtitle-auto:hover {
+  background: var(--accent2-dim);
+  color: var(--text-primary);
+}
+
 /* Video subtitle styling */
 video::cue {
   background: rgba(0, 0, 0, 0.8);
