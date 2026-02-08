@@ -1,6 +1,6 @@
 {
   "name": "m3u-player",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Electron IPTV M3U Player",
   "main": "main.js",
   "author": "Sayzzi",
