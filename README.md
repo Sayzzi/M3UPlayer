@@ -22,11 +22,13 @@
 ## Features
 
 **Streaming**
+
 - HLS (.m3u8) playback powered by [hls.js](https://github.com/video-dev/hls.js)
 - Direct stream support (MP4, MPEG-TS, etc.)
 - Auto error recovery and stream retry
 
 **Channel Management**
+
 - Load M3U/M3U8 playlists from remote URLs
 - Channels organized by categories (group-title)
 - Grid and list view modes
@@ -34,28 +36,31 @@
 - Channel logos with fallback initials
 
 **Favorites & History**
+
 - Star channels to add them to your favorites
 - Automatically tracks your 50 most recently watched channels
 - Persistent across sessions
 
 **EPG (Electronic Program Guide)**
+
 - XMLTV format support (auto-detected from `url-tvg` in playlist)
 - Now/Next program display on channel cards and player
 - Gzipped EPG support (.xml.gz)
 - Auto-refresh every 6 hours
 
 **Multi-Playlist**
+
 - Save and manage multiple M3U playlist URLs
 - Quick switch between playlists
 - Auto-loads your last active playlist on startup
 
 **Keyboard Shortcuts**
 
-| Key | Action |
-|-----|--------|
-| `Space` | Play / Pause |
-| `M` | Mute / Unmute |
-| `F` | Toggle Fullscreen |
+| Key      | Action                         |
+| -------- | ------------------------------ |
+| `Space`  | Play / Pause                   |
+| `M`      | Mute / Unmute                  |
+| `F`      | Toggle Fullscreen              |
 | `Escape` | Exit Fullscreen / Close Player |
 
 ---
@@ -126,13 +131,13 @@ M3UPlayer/
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Framework | [Electron](https://www.electronjs.org/) |
-| Video | [hls.js](https://github.com/video-dev/hls.js) |
-| Storage | [electron-conf](https://github.com/nicedoc/electron-conf) |
-| UI | Vanilla HTML/CSS/JS |
-| Theme | Custom dark theme with CSS variables |
+| Component | Technology                                                |
+| --------- | --------------------------------------------------------- |
+| Framework | [Electron](https://www.electronjs.org/)                   |
+| Video     | [hls.js](https://github.com/video-dev/hls.js)             |
+| Storage   | [electron-conf](https://github.com/nicedoc/electron-conf) |
+| UI        | Vanilla HTML/CSS/JS                                       |
+| Theme     | Custom dark theme with CSS variables                      |
 
 ---
 

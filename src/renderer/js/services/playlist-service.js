@@ -16,9 +16,11 @@ M3U.PlaylistService = class {
   async loadFromUrl(url) {
     const resp = await fetch(url, {
       method: 'GET',
-      headers: { 'Accept': '*/*', 'Accept-Language': 'en-US,en;q=0.9' }
+      headers: { Accept: '*/*', 'Accept-Language': 'en-US,en;q=0.9' }
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
     const text = await resp.text();
     const result = await window.electronAPI.parsePlaylist(text);
     this._applyResult(result);
@@ -72,21 +74,33 @@ M3U.PlaylistService = class {
     return await window.electronAPI.getActivePlaylistId();
   }
 
-  getChannels() { return this.channels; }
-  getGroups() { return this.groups; }
-  getVods() { return this.vods; }
-  getVodGroups() { return this.vodGroups; }
-  getSeries() { return this.series; }
-  getSeriesGroups() { return this.seriesGroups; }
+  getChannels() {
+    return this.channels;
+  }
+  getGroups() {
+    return this.groups;
+  }
+  getVods() {
+    return this.vods;
+  }
+  getVodGroups() {
+    return this.vodGroups;
+  }
+  getSeries() {
+    return this.series;
+  }
+  getSeriesGroups() {
+    return this.seriesGroups;
+  }
 
   filterItems(items, query, group) {
     let filtered = items;
     if (group && group !== 'all') {
-      filtered = filtered.filter(item => item.group === group);
+      filtered = filtered.filter((item) => item.group === group);
     }
     if (query) {
       const q = query.toLowerCase();
-      filtered = filtered.filter(item => item.name.toLowerCase().includes(q));
+      filtered = filtered.filter((item) => item.name.toLowerCase().includes(q));
     }
     return filtered;
   }
@@ -94,17 +108,18 @@ M3U.PlaylistService = class {
   filterChannels(query, group, favoriteIds = null) {
     let filtered = this.channels;
     if (group && group !== 'all') {
-      filtered = filtered.filter(ch => ch.group === group);
+      filtered = filtered.filter((ch) => ch.group === group);
     }
     if (favoriteIds) {
-      filtered = filtered.filter(ch => favoriteIds.has(ch.id));
+      filtered = filtered.filter((ch) => favoriteIds.has(ch.id));
     }
     if (query) {
       const q = query.toLowerCase();
-      filtered = filtered.filter(ch =>
-        ch.name.toLowerCase().includes(q) ||
-        ch.tvgName.toLowerCase().includes(q) ||
-        ch.group.toLowerCase().includes(q)
+      filtered = filtered.filter(
+        (ch) =>
+          ch.name.toLowerCase().includes(q) ||
+          ch.tvgName.toLowerCase().includes(q) ||
+          ch.group.toLowerCase().includes(q)
       );
     }
     return filtered;

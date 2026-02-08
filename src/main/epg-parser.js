@@ -21,14 +21,17 @@ function parseEpg(xmlText) {
   const windowStart = now - 12 * 3600 * 1000;
   const windowEnd = now + 12 * 3600 * 1000;
 
-  const progRegex = /<programme\s+start="([^"]*)"\s+stop="([^"]*)"\s+channel="([^"]*)"[^>]*>([\s\S]*?)<\/programme>/g;
+  const progRegex =
+    /<programme\s+start="([^"]*)"\s+stop="([^"]*)"\s+channel="([^"]*)"[^>]*>([\s\S]*?)<\/programme>/g;
   while ((match = progRegex.exec(xmlText)) !== null) {
     const start = parseXmltvDate(match[1]);
     const stop = parseXmltvDate(match[2]);
     const channelId = match[3];
     const block = match[4];
 
-    if (start > windowEnd || stop < windowStart) continue;
+    if (start > windowEnd || stop < windowStart) {
+      continue;
+    }
 
     const titleMatch = block.match(/<title[^>]*>([^<]*)<\/title>/);
     const descMatch = block.match(/<desc[^>]*>([^<]*)<\/desc>/);

@@ -8,20 +8,25 @@ window.M3U = window.M3U || {};
   const toast = new M3U.Toast();
 
   const sidebar = new M3U.Sidebar(document.getElementById('sidebar'), {
-    favoritesService, historyService
+    favoritesService,
+    historyService
   });
   sidebar.initStaticItems();
 
   const channelGrid = new M3U.ChannelGrid(document.getElementById('content'), {
-    playlistService, favoritesService, historyService, epgService
+    playlistService,
+    favoritesService,
+    historyService,
+    epgService
   });
 
   const playerPanel = new M3U.PlayerPanel(document.getElementById('player-panel'), {
     epgService
   });
 
-  const searchBar = new M3U.SearchBar(document.getElementById('search-input'));
+  const _searchBar = new M3U.SearchBar(document.getElementById('search-input'));
   const modalManager = new M3U.ModalManager({ playlistService, toast });
+  const settingsModal = new M3U.SettingsModal({ modalManager, toast });
 
   // Loading overlay
   const loadingOverlay = document.getElementById('loading-overlay');
@@ -35,9 +40,9 @@ window.M3U = window.M3U || {};
 
   // Sidebar content type tabs (Live / Films / Series)
   const tabBtns = document.querySelectorAll('#sidebar-tabs .sidebar-tab');
-  tabBtns.forEach(btn => {
+  tabBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
+      tabBtns.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       sidebar.setContentType(btn.dataset.type);
     });
@@ -60,6 +65,12 @@ window.M3U = window.M3U || {};
     document.getElementById('btn-view-list').classList.add('active');
     document.getElementById('btn-view-grid').classList.remove('active');
   });
+  document.getElementById('sort-select').addEventListener('change', (e) => {
+    channelGrid.setSortMode(e.target.value);
+  });
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    settingsModal.show();
+  });
 
   // Channel play
   M3U.dom.on('channel-play', async (e) => {
@@ -78,7 +89,12 @@ window.M3U = window.M3U || {};
     }
     try {
       M3U.dom.dispatch('loading-start', { text: 'Loading episodes...' });
-      const info = await M3U.XtreamClient.getSeriesInfo(creds.server, creds.username, creds.password, series.seriesId);
+      const info = await M3U.XtreamClient.getSeriesInfo(
+        creds.server,
+        creds.username,
+        creds.password,
+        series.seriesId
+      );
       if (info && info.episodes) {
         modalManager.showSeriesEpisodes(series, info, creds);
       } else {
@@ -95,8 +111,11 @@ window.M3U = window.M3U || {};
   M3U.dom.on('playlist-loaded', async (e) => {
     const { epgUrl } = e.detail;
     if (epgUrl) {
-      try { await epgService.load(epgUrl); }
-      catch (err) { console.warn('EPG load failed:', err.message); }
+      try {
+        await epgService.load(epgUrl);
+      } catch (err) {
+        console.warn('EPG load failed:', err.message);
+      }
     }
   });
 
@@ -104,10 +123,30 @@ window.M3U = window.M3U || {};
   await favoritesService.load();
   await historyService.load();
 
+  // Initialize EPG service (restore cache, load settings)
+  await epgService.init();
+
   // Load active playlist
   const playlists = await playlistService.getSavedPlaylists();
   const activeId = await playlistService.getActiveId();
-  const activePlaylist = playlists.find(p => p.id === activeId);
+  const activePlaylist = playlists.find((p) => p.id === activeId);
+
+  // Restore default view and sort from settings
+  try {
+    const settings = await window.electronAPI.getSettings();
+    if (settings.defaultView) {
+      channelGrid.setViewMode(settings.defaultView);
+      if (settings.defaultView === 'list') {
+        document.getElementById('btn-view-list').click();
+      }
+    }
+    if (settings.defaultSort) {
+      document.getElementById('sort-select').value = settings.defaultSort;
+      channelGrid.setSortMode(settings.defaultSort);
+    }
+  } catch {
+    // Use defaults
+  }
 
   if (activePlaylist) {
     try {
@@ -141,7 +180,9 @@ window.M3U = window.M3U || {};
           playerPanel.play(lastWatched);
         }, 500);
       }
-    } catch {}
+    } catch {
+      // Silently ignore - last watched restoration is non-critical
+    }
   }
 
   // Signal main process that app is ready (closes splash screen)

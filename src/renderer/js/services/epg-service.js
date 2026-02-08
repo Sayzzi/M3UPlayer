@@ -5,20 +5,65 @@ M3U.EpgService = class {
     this.data = null;
     this.refreshInterval = null;
     this._url = null;
+    this._refreshHours = 6;
   }
 
-  async load(url) {
-    if (!url) return null;
+  async init() {
+    // Load settings and restore cached EPG
+    try {
+      const settings = await window.electronAPI.getSettings();
+      this._refreshHours = settings.epgRefreshHours || 6;
+
+      const cached = await window.electronAPI.getEpgCache();
+      if (cached && cached.data) {
+        const ageHours = (Date.now() - cached.timestamp) / (3600 * 1000);
+        if (ageHours < this._refreshHours) {
+          this.data = cached.data;
+          this._url = cached.url;
+          M3U.dom.dispatch('epg-loaded', { epgData: this.data });
+        }
+      }
+    } catch {
+      // Ignore cache load errors
+    }
+  }
+
+  async load(url, forceRefresh = false) {
+    if (!url) {
+      return null;
+    }
+
+    // Check disk cache first (unless force refresh)
+    if (!forceRefresh) {
+      try {
+        const cached = await window.electronAPI.getEpgCache();
+        if (cached && cached.url === url) {
+          const ageHours = (Date.now() - cached.timestamp) / (3600 * 1000);
+          if (ageHours < this._refreshHours) {
+            this.data = cached.data;
+            this._url = url;
+            this.startAutoRefresh();
+            M3U.dom.dispatch('epg-loaded', { epgData: this.data });
+            return this.data;
+          }
+        }
+      } catch {
+        // Continue to fetch
+      }
+    }
+
     try {
       // Fetch EPG XML from renderer (Chromium fetch) to bypass Cloudflare
       const resp = await fetch(url, {
         method: 'GET',
         headers: {
-          'Accept': '*/*',
+          Accept: '*/*',
           'Accept-Language': 'en-US,en;q=0.9'
         }
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
 
       let xmlText;
       // Check if response is gzipped (some EPG servers gzip without proper headers)
@@ -37,6 +82,10 @@ M3U.EpgService = class {
       // Parse in main process
       this.data = await window.electronAPI.parseEpg(xmlText);
       this._url = url;
+
+      // Save to disk cache
+      await window.electronAPI.setEpgCache(url, this.data);
+
       this.startAutoRefresh();
       M3U.dom.dispatch('epg-loaded', { epgData: this.data });
       return this.data;
@@ -46,11 +95,21 @@ M3U.EpgService = class {
     }
   }
 
+  setRefreshHours(hours) {
+    this._refreshHours = hours;
+    this.startAutoRefresh();
+  }
+
   startAutoRefresh() {
     this.stopAutoRefresh();
-    this.refreshInterval = setInterval(() => {
-      if (this._url) this.load(this._url);
-    }, 6 * 3600 * 1000);
+    this.refreshInterval = setInterval(
+      () => {
+        if (this._url) {
+          this.load(this._url, true);
+        }
+      },
+      this._refreshHours * 3600 * 1000
+    );
   }
 
   stopAutoRefresh() {
@@ -61,19 +120,27 @@ M3U.EpgService = class {
   }
 
   getCurrentProgram(tvgId) {
-    if (!this.data || !tvgId) return null;
+    if (!this.data || !tvgId) {
+      return null;
+    }
     const progs = this.data.programmes[tvgId];
-    if (!progs) return null;
+    if (!progs) {
+      return null;
+    }
     const now = Date.now();
-    return progs.find(p => now >= p.start && now < p.stop) || null;
+    return progs.find((p) => now >= p.start && now < p.stop) || null;
   }
 
   getNextProgram(tvgId) {
-    if (!this.data || !tvgId) return null;
+    if (!this.data || !tvgId) {
+      return null;
+    }
     const progs = this.data.programmes[tvgId];
-    if (!progs) return null;
+    if (!progs) {
+      return null;
+    }
     const now = Date.now();
-    return progs.find(p => p.start >= now) || null;
+    return progs.find((p) => p.start >= now) || null;
   }
 
   hasData() {

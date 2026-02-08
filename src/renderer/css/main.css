@@ -80,7 +80,8 @@
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-body);
@@ -99,8 +100,12 @@ html, body {
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 10px;
@@ -118,17 +123,17 @@ html, body {
   grid-template-rows: 52px 1fr;
   grid-template-columns: 240px 1fr;
   grid-template-areas:
-    "sidebar header"
-    "sidebar content";
+    'sidebar header'
+    'sidebar content';
   height: 100vh;
   transition: grid-template-columns 0.4s var(--ease-out);
 }
 
 .app-container.player-open {
-  grid-template-columns: 240px 1fr 460px;
+  grid-template-columns: 240px minmax(200px, 1fr) minmax(320px, 400px);
   grid-template-areas:
-    "sidebar header  player"
-    "sidebar content player";
+    'sidebar header  player'
+    'sidebar content player';
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -155,7 +160,7 @@ html, body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
 }
 
 .header-playlist-name {
@@ -169,7 +174,9 @@ html, body {
   letter-spacing: -0.3px;
 }
 
-.header-spacer { flex: 1; }
+.header-spacer {
+  flex: 1;
+}
 
 .header-sep {
   width: 1px;
@@ -215,7 +222,9 @@ html, body {
   border-color: var(--accent);
   width: 300px;
   background: var(--bg-elevated);
-  box-shadow: 0 0 0 3px var(--accent-dim), var(--shadow-accent);
+  box-shadow:
+    0 0 0 3px var(--accent-dim),
+    var(--shadow-accent);
 }
 
 .search-wrap:focus-within .search-icon {
@@ -295,10 +304,48 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   SORT SELECT
+   ═══════════════════════════════════════════════════════ */
+
+.sort-select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 28px 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239d9db5' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.sort-select:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.sort-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.sort-select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════
    INPUTS
    ═══════════════════════════════════════════════════════ */
 
-input[type="text"], input[type="url"], input[type="password"] {
+input[type='text'],
+input[type='url'],
+input[type='password'] {
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   color: var(--text-primary);
@@ -310,7 +357,9 @@ input[type="text"], input[type="url"], input[type="password"] {
   transition: all var(--transition);
 }
 
-input[type="text"]:focus, input[type="url"]:focus, input[type="password"]:focus {
+input[type='text']:focus,
+input[type='url']:focus,
+input[type='password']:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
   background: var(--bg-elevated);
@@ -345,7 +394,11 @@ input::placeholder {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .loading-text {
   margin-top: 16px;
@@ -412,4 +465,6 @@ input::placeholder {
   font-family: var(--font-mono);
 }
 
-.hidden { display: none !important; }
+.hidden {
+  display: none !important;
+}

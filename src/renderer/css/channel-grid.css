@@ -86,10 +86,27 @@
   box-shadow: var(--shadow-md);
 }
 
+.channel-card:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px var(--accent-dim),
+    var(--shadow-lg);
+  transform: translateY(-3px);
+}
+
+.channel-row:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
 .channel-card.playing {
   border-color: var(--border-accent);
   background: var(--accent-dim);
-  box-shadow: var(--shadow-accent), inset 0 0 0 1px var(--border-accent);
+  box-shadow:
+    var(--shadow-accent),
+    inset 0 0 0 1px var(--border-accent);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -123,7 +140,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 40%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 40%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -300,7 +317,9 @@
   border-radius: var(--radius-md);
 }
 
-.channel-row .channel-logo-fallback { font-size: 14px; }
+.channel-row .channel-logo-fallback {
+  font-size: 14px;
+}
 
 .channel-row .channel-name {
   text-align: left;

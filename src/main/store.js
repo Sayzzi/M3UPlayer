@@ -8,8 +8,12 @@ const store = new Conf({
     history: [],
     playbackPositions: {},
     lastWatched: null,
+    epgCache: null,
     settings: {
-      volume: 0.8
+      volume: 0.8,
+      epgRefreshHours: 6,
+      defaultView: 'grid',
+      defaultSort: 'default'
     }
   }
 });
@@ -37,7 +41,7 @@ function addPlaylist(url, name, type = 'm3u', xtreamData = null) {
 }
 
 function removePlaylist(id) {
-  const playlists = getPlaylists().filter(p => p.id !== id);
+  const playlists = getPlaylists().filter((p) => p.id !== id);
   store.set('playlists', playlists);
   const activeId = store.get('activePlaylistId');
   if (activeId === id) {
@@ -76,7 +80,7 @@ function getHistory() {
 
 function addToHistory(entry) {
   let history = getHistory();
-  history = history.filter(h => h.channelId !== entry.channelId);
+  history = history.filter((h) => h.channelId !== entry.channelId);
   history.unshift({
     channelId: entry.channelId,
     channelName: entry.channelName,
@@ -133,7 +137,31 @@ function setLastWatched(channel) {
 }
 
 function getSettings() {
-  return store.get('settings') || { volume: 0.8 };
+  return (
+    store.get('settings') || {
+      volume: 0.8,
+      epgRefreshHours: 6,
+      defaultView: 'grid',
+      defaultSort: 'default'
+    }
+  );
+}
+
+// EPG cache (persisted to disk)
+function getEpgCache() {
+  return store.get('epgCache') || null;
+}
+
+function setEpgCache(url, data) {
+  store.set('epgCache', {
+    url,
+    data,
+    timestamp: Date.now()
+  });
+}
+
+function clearEpgCache() {
+  store.set('epgCache', null);
 }
 
 function updateSettings(partial) {
@@ -159,5 +187,8 @@ module.exports = {
   getLastWatched,
   setLastWatched,
   getSettings,
-  updateSettings
+  updateSettings,
+  getEpgCache,
+  setEpgCache,
+  clearEpgCache
 };

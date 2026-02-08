@@ -2,7 +2,7 @@ window.M3U = window.M3U || {};
 
 M3U.XtreamClient = {
   _buildBaseUrl(server, username, password) {
-    let s = this._normalizeServer(server);
+    const s = this._normalizeServer(server);
     return `${s}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
   },
 
@@ -18,11 +18,13 @@ M3U.XtreamClient = {
     const resp = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json, */*',
+        Accept: 'application/json, */*',
         'Accept-Language': 'en-US,en;q=0.9'
       }
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
     return await resp.json();
   },
 
@@ -57,28 +59,31 @@ M3U.XtreamClient = {
     const base = this._buildBaseUrl(server, username, password);
 
     // Fetch all categories and streams in parallel
-    const [
-      liveCategories, liveStreams,
-      vodCategories, vodStreams,
-      seriesCategories, seriesList
-    ] = await Promise.all([
-      this._fetchJson(`${base}&action=get_live_categories`).catch(() => []),
-      this._fetchJson(`${base}&action=get_live_streams`).catch(() => []),
-      this._fetchJson(`${base}&action=get_vod_categories`).catch(() => []),
-      this._fetchJson(`${base}&action=get_vod_streams`).catch(() => []),
-      this._fetchJson(`${base}&action=get_series_categories`).catch(() => []),
-      this._fetchJson(`${base}&action=get_series`).catch(() => [])
-    ]);
+    const [liveCategories, liveStreams, vodCategories, vodStreams, seriesCategories, seriesList] =
+      await Promise.all([
+        this._fetchJson(`${base}&action=get_live_categories`).catch(() => []),
+        this._fetchJson(`${base}&action=get_live_streams`).catch(() => []),
+        this._fetchJson(`${base}&action=get_vod_categories`).catch(() => []),
+        this._fetchJson(`${base}&action=get_vod_streams`).catch(() => []),
+        this._fetchJson(`${base}&action=get_series_categories`).catch(() => []),
+        this._fetchJson(`${base}&action=get_series`).catch(() => [])
+      ]);
 
-    const toArray = d => Array.isArray(d) ? d : [];
+    const toArray = (d) => (Array.isArray(d) ? d : []);
 
     // Build category maps
     const liveCatMap = {};
-    for (const cat of toArray(liveCategories)) liveCatMap[cat.category_id] = cat.category_name || 'Unknown';
+    for (const cat of toArray(liveCategories)) {
+      liveCatMap[cat.category_id] = cat.category_name || 'Unknown';
+    }
     const vodCatMap = {};
-    for (const cat of toArray(vodCategories)) vodCatMap[cat.category_id] = cat.category_name || 'Unknown';
+    for (const cat of toArray(vodCategories)) {
+      vodCatMap[cat.category_id] = cat.category_name || 'Unknown';
+    }
     const seriesCatMap = {};
-    for (const cat of toArray(seriesCategories)) seriesCatMap[cat.category_id] = cat.category_name || 'Unknown';
+    for (const cat of toArray(seriesCategories)) {
+      seriesCatMap[cat.category_id] = cat.category_name || 'Unknown';
+    }
 
     // Build live channels
     const channels = [];

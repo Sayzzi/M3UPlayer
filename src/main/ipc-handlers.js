@@ -5,8 +5,6 @@ const { parseEpg } = require('./epg-parser');
 const { fetchPlaylist, fetchEpg } = require('./playlist-fetcher');
 const { xtreamLoadAll } = require('./xtream-client');
 
-let cachedEpg = null;
-
 function registerIpcHandlers() {
   // Playlist operations
   ipcMain.handle('playlist:load', async (_event, url) => {
@@ -63,14 +61,27 @@ function registerIpcHandlers() {
     return store.addToHistory(entry);
   });
 
+  // EPG cache (persisted to disk)
+  ipcMain.handle('epg:getCache', () => {
+    return store.getEpgCache();
+  });
+
+  ipcMain.handle('epg:setCache', (_event, url, data) => {
+    store.setEpgCache(url, data);
+    return true;
+  });
+
   // EPG (legacy - via main process fetch)
   ipcMain.handle('epg:load', async (_event, url) => {
-    if (cachedEpg && cachedEpg.url === url && Date.now() - cachedEpg.timestamp < 6 * 3600 * 1000) {
-      return cachedEpg.data;
+    const settings = store.getSettings();
+    const cacheHours = settings.epgRefreshHours || 6;
+    const cached = store.getEpgCache();
+    if (cached && cached.url === url && Date.now() - cached.timestamp < cacheHours * 3600 * 1000) {
+      return cached.data;
     }
     const xml = await fetchEpg(url);
     const data = parseEpg(xml);
-    cachedEpg = { url, data, timestamp: Date.now() };
+    store.setEpgCache(url, data);
     return data;
   });
 

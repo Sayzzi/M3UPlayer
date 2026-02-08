@@ -1,225 +1,444 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: http: data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:;">
-  <title>M3U Player</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/sidebar.css">
-  <link rel="stylesheet" href="css/channel-grid.css">
-  <link rel="stylesheet" href="css/player.css">
-  <link rel="stylesheet" href="css/modals.css">
-</head>
-<body>
-  <div class="app-container">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
-          <polyline points="17 2 12 7 7 2"/>
-        </svg>
-        <span>M3U Player</span>
-      </div>
-
-      <!-- Content Type Tabs -->
-      <div class="sidebar-tabs" id="sidebar-tabs">
-        <button class="sidebar-tab active" data-type="live">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: http: data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:;"
+    />
+    <title>M3U Player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/sidebar.css" />
+    <link rel="stylesheet" href="css/channel-grid.css" />
+    <link rel="stylesheet" href="css/player.css" />
+    <link rel="stylesheet" href="css/modals.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+            <polyline points="17 2 12 7 7 2" />
           </svg>
-          Live TV
-        </button>
-        <button class="sidebar-tab" data-type="vod">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/>
-          </svg>
-          Films
-        </button>
-        <button class="sidebar-tab" data-type="series">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-          Series
-        </button>
-      </div>
-
-      <div class="sidebar-section"></div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section-title">Categories</div>
-      <div class="sidebar-categories"></div>
-    </aside>
-
-    <!-- Header -->
-    <header class="header">
-      <span class="header-playlist-name" id="header-playlist-name">No playlist loaded</span>
-      <div class="header-spacer"></div>
-
-      <div class="search-wrap">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input type="text" id="search-input" placeholder="Search...">
-      </div>
-
-      <button class="btn-icon active" id="btn-view-grid" title="Grid view">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-        </svg>
-      </button>
-      <button class="btn-icon" id="btn-view-list" title="List view">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-        </svg>
-      </button>
-
-      <div class="header-sep"></div>
-
-      <button class="btn-icon" id="btn-add-playlist" title="Add playlist">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </button>
-      <button class="btn-icon" id="btn-manage-playlists" title="Manage playlists">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-      </button>
-    </header>
-
-    <!-- Content -->
-    <main class="content" id="content">
-      <div class="content-header">
-        <div>
-          <span class="content-title">All Channels</span>
-          <span class="content-count">0 channels</span>
-        </div>
-      </div>
-      <div class="channel-scroll">
-        <div class="channel-grid"></div>
-      </div>
-
-      <!-- Loading overlay -->
-      <div class="loading-overlay hidden" id="loading-overlay">
-        <div class="spinner"></div>
-        <div class="loading-text">Loading...</div>
-      </div>
-    </main>
-
-    <!-- Player Panel -->
-    <div class="player-panel hidden" id="player-panel">
-      <div class="player-header">
-        <span class="player-channel-name">Channel</span>
-        <button class="player-close-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="player-video-container" id="player-video-container">
-        <video></video>
-        <div class="player-error-overlay hidden">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <div class="error-text">Stream unavailable</div>
-          <button class="btn btn-accent" onclick="M3U.dom.dispatch('retry-stream')">Retry</button>
+          <span>M3U Player</span>
         </div>
 
-        <!-- Controls overlay (inside container so visible in fullscreen) -->
-        <div class="player-controls-overlay" id="player-controls-overlay">
-          <!-- Channel name in fullscreen -->
-          <div class="fs-channel-name"></div>
+        <!-- Content Type Tabs -->
+        <div class="sidebar-tabs" id="sidebar-tabs">
+          <button class="sidebar-tab active" data-type="live">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+              <polyline points="17 2 12 7 7 2" />
+            </svg>
+            Live TV
+          </button>
+          <button class="sidebar-tab" data-type="vod">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+              <line x1="7" y1="2" x2="7" y2="22" />
+              <line x1="17" y1="2" x2="17" y2="22" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <line x1="2" y1="7" x2="7" y2="7" />
+              <line x1="2" y1="17" x2="7" y2="17" />
+              <line x1="17" y1="7" x2="22" y2="7" />
+              <line x1="17" y1="17" x2="22" y2="17" />
+            </svg>
+            Films
+          </button>
+          <button class="sidebar-tab" data-type="series">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            Series
+          </button>
+        </div>
 
-          <!-- Bottom gradient + controls -->
-          <div class="fs-bottom">
-            <!-- Seek bar (VOD/Series only) -->
-            <div class="player-seek hidden" id="player-seek">
-              <span class="seek-time-current">0:00</span>
-              <input type="range" class="seek-slider" min="0" max="100" step="0.1" value="0">
-              <span class="seek-time-total">0:00</span>
-            </div>
+        <div class="sidebar-section"></div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-title">Categories</div>
+        <div class="sidebar-categories"></div>
+      </aside>
 
-            <div class="player-controls">
-              <button class="btn-icon ctrl-play-pause">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
-              </button>
-              <button class="btn-icon ctrl-rewind hidden" title="Rewind 10s">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                </svg>
-              </button>
-              <button class="btn-icon ctrl-forward hidden" title="Forward 10s">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                </svg>
-              </button>
-              <button class="btn-icon ctrl-mute">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                </svg>
-              </button>
-              <input type="range" class="volume-slider" min="0" max="1" step="0.05" value="0.8">
-              <div class="player-controls-spacer"></div>
-              <button class="btn-icon ctrl-fullscreen">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                </svg>
-              </button>
+      <!-- Header -->
+      <header class="header">
+        <span class="header-playlist-name" id="header-playlist-name">No playlist loaded</span>
+        <div class="header-spacer"></div>
+
+        <div class="search-wrap">
+          <svg
+            class="search-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" id="search-input" placeholder="Search..." />
+        </div>
+
+        <select class="sort-select" id="sort-select" title="Sort channels">
+          <option value="default">Default order</option>
+          <option value="az">A → Z</option>
+          <option value="za">Z → A</option>
+          <option value="recent">Recently watched</option>
+        </select>
+
+        <button class="btn-icon active" id="btn-view-grid" title="Grid view">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-view-list" title="List view">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+        </button>
+
+        <div class="header-sep"></div>
+
+        <button class="btn-icon" id="btn-add-playlist" title="Add playlist">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-manage-playlists" title="Manage playlists">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-settings" title="Settings">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M12 1v6m0 6v6m11-9h-6m-6 0H1m15.7-8.7l-4.2 4.2m-6.3 6.3l-4.2 4.2m0-20.8l4.2 4.2m6.3 6.3l4.2 4.2"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <!-- Content -->
+      <main class="content" id="content">
+        <div class="content-header">
+          <div>
+            <span class="content-title">All Channels</span>
+            <span class="content-count">0 channels</span>
+          </div>
+        </div>
+        <div class="channel-scroll">
+          <div class="channel-grid"></div>
+        </div>
+
+        <!-- Loading overlay -->
+        <div class="loading-overlay hidden" id="loading-overlay">
+          <div class="spinner"></div>
+          <div class="loading-text">Loading...</div>
+        </div>
+      </main>
+
+      <!-- Player Panel -->
+      <div class="player-panel hidden" id="player-panel">
+        <div class="player-header">
+          <span class="player-channel-name">Channel</span>
+          <button class="player-close-btn">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="player-video-container" id="player-video-container">
+          <video></video>
+          <div class="player-error-overlay hidden">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <div class="error-text">Stream unavailable</div>
+            <button class="btn btn-accent" onclick="M3U.dom.dispatch('retry-stream')">Retry</button>
+          </div>
+
+          <!-- Controls overlay (inside container so visible in fullscreen) -->
+          <div class="player-controls-overlay" id="player-controls-overlay">
+            <!-- Channel name in fullscreen -->
+            <div class="fs-channel-name"></div>
+
+            <!-- Bottom gradient + controls -->
+            <div class="fs-bottom">
+              <!-- Seek bar (VOD/Series only) -->
+              <div class="player-seek hidden" id="player-seek">
+                <span class="seek-time-current">0:00</span>
+                <input type="range" class="seek-slider" min="0" max="100" step="0.1" value="0" />
+                <span class="seek-time-total">0:00</span>
+              </div>
+
+              <div class="player-controls">
+                <button class="btn-icon ctrl-play-pause">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                </button>
+                <button class="btn-icon ctrl-rewind hidden" title="Rewind 10s">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="1 4 1 10 7 10" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  </svg>
+                </button>
+                <button class="btn-icon ctrl-forward hidden" title="Forward 10s">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                  </svg>
+                </button>
+                <button class="btn-icon ctrl-mute">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  </svg>
+                </button>
+                <input type="range" class="volume-slider" min="0" max="1" step="0.05" value="0.8" />
+                <div class="player-controls-spacer"></div>
+                <button class="btn-icon ctrl-pip" title="Picture-in-Picture (P)">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <rect x="12" y="10" width="8" height="6" rx="1" />
+                  </svg>
+                </button>
+                <button class="btn-icon ctrl-fullscreen">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="player-epg-bar">
-        <div class="player-epg-now hidden">
-          <span class="epg-label">Now</span>
-          <span class="epg-title"></span>
-          <span class="epg-time"></span>
+        <div class="player-epg-bar">
+          <div class="player-epg-now hidden">
+            <span class="epg-label">Now</span>
+            <span class="epg-title"></span>
+            <span class="epg-time"></span>
+          </div>
+          <div class="epg-progress"><div class="epg-progress-fill" style="width: 0%"></div></div>
+          <div class="player-epg-next hidden">
+            <span class="epg-label">Next</span>
+            <span class="epg-title"></span>
+            <span class="epg-time"></span>
+          </div>
         </div>
-        <div class="epg-progress"><div class="epg-progress-fill" style="width:0%"></div></div>
-        <div class="player-epg-next hidden">
-          <span class="epg-label">Next</span>
-          <span class="epg-title"></span>
-          <span class="epg-time"></span>
-        </div>
-      </div>
 
-      <div class="player-channel-info">
-        <div class="channel-logo-wrap"></div>
-        <div class="player-channel-details">
-          <div class="name"></div>
-          <div class="group"></div>
+        <div class="player-channel-info">
+          <div class="channel-logo-wrap"></div>
+          <div class="player-channel-details">
+            <div class="name"></div>
+            <div class="group"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Toast container -->
-  <div class="toast-container" id="toast-container"></div>
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
 
-  <!-- Scripts -->
-  <script src="vendor/hls.min.js"></script>
-  <script src="js/utils/dom-helpers.js"></script>
-  <script src="js/utils/formatters.js"></script>
-  <script src="js/services/xtream-client.js"></script>
-  <script src="js/services/playlist-service.js"></script>
-  <script src="js/services/favorites-service.js"></script>
-  <script src="js/services/history-service.js"></script>
-  <script src="js/services/epg-service.js"></script>
-  <script src="js/ui/toast.js"></script>
-  <script src="js/ui/sidebar.js"></script>
-  <script src="js/ui/channel-grid.js"></script>
-  <script src="js/ui/player-panel.js"></script>
-  <script src="js/ui/search-bar.js"></script>
-  <script src="js/ui/epg-display.js"></script>
-  <script src="js/ui/modal-manager.js"></script>
-  <script src="js/app.js"></script>
-</body>
+    <!-- Scripts -->
+    <script src="vendor/hls.min.js"></script>
+    <script src="js/utils/dom-helpers.js"></script>
+    <script src="js/utils/formatters.js"></script>
+    <script src="js/services/xtream-client.js"></script>
+    <script src="js/services/playlist-service.js"></script>
+    <script src="js/services/favorites-service.js"></script>
+    <script src="js/services/history-service.js"></script>
+    <script src="js/services/epg-service.js"></script>
+    <script src="js/ui/toast.js"></script>
+    <script src="js/ui/sidebar.js"></script>
+    <script src="js/ui/channel-grid.js"></script>
+    <script src="js/ui/player-panel.js"></script>
+    <script src="js/ui/search-bar.js"></script>
+    <script src="js/ui/epg-display.js"></script>
+    <script src="js/ui/modal-manager.js"></script>
+    <script src="js/ui/settings-modal.js"></script>
+    <script src="js/app.js"></script>
+  </body>
 </html>

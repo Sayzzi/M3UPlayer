@@ -1,3 +1,64 @@
+// Patterns to detect VOD content
+const VOD_URL_PATTERNS = [
+  /\/movie\//i,
+  /\/movies\//i,
+  /\/vod\//i,
+  /\/film\//i,
+  /\.mp4(\?|$)/i,
+  /\.mkv(\?|$)/i,
+  /\.avi(\?|$)/i
+];
+
+const VOD_GROUP_PATTERNS = [
+  /^vod\b/i,
+  /^movie/i,
+  /^film/i,
+  /\bvod$/i,
+  /\bmovies?$/i,
+  /\bfilms?$/i,
+  /^\|.*vod/i,
+  /^\|.*movie/i
+];
+
+// Patterns to detect Series content
+const SERIES_URL_PATTERNS = [/\/series\//i, /\/show\//i, /\/tv[_-]?shows?\//i];
+
+const SERIES_GROUP_PATTERNS = [
+  /^series\b/i,
+  /\bseries$/i,
+  /^tv[_-]?shows?/i,
+  /\btv[_-]?shows?$/i,
+  /^\|.*series/i
+];
+
+function detectContentType(url, group) {
+  // Check URL patterns first (more reliable)
+  for (const pattern of SERIES_URL_PATTERNS) {
+    if (pattern.test(url)) {
+      return 'series';
+    }
+  }
+  for (const pattern of VOD_URL_PATTERNS) {
+    if (pattern.test(url)) {
+      return 'vod';
+    }
+  }
+
+  // Fall back to group name patterns
+  for (const pattern of SERIES_GROUP_PATTERNS) {
+    if (pattern.test(group)) {
+      return 'series';
+    }
+  }
+  for (const pattern of VOD_GROUP_PATTERNS) {
+    if (pattern.test(group)) {
+      return 'vod';
+    }
+  }
+
+  return 'live';
+}
+
 function parseM3U(text) {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
 
@@ -14,7 +75,11 @@ function parseM3U(text) {
   }
 
   const channels = [];
-  const groupSet = new Set();
+  const vods = [];
+  const series = [];
+  const liveGroupSet = new Set();
+  const vodGroupSet = new Set();
+  const seriesGroupSet = new Set();
   let currentAttrs = null;
 
   for (let i = 1; i < lines.length; i++) {
@@ -23,18 +88,31 @@ function parseM3U(text) {
     if (line.startsWith('#EXTINF:')) {
       currentAttrs = parseExtInf(line);
     } else if (line && !line.startsWith('#') && currentAttrs) {
-      const channel = {
+      const group = currentAttrs.group || 'Non classé';
+      const contentType = detectContentType(line, group);
+
+      const item = {
         id: generateId(currentAttrs.tvgId, line),
         tvgId: currentAttrs.tvgId,
         tvgName: currentAttrs.tvgName,
         name: currentAttrs.name,
         logo: currentAttrs.logo,
-        group: currentAttrs.group || 'Non classé',
+        group: group,
         url: line,
-        type: 'live'
+        type: contentType
       };
-      channels.push(channel);
-      groupSet.add(channel.group);
+
+      if (contentType === 'vod') {
+        vods.push(item);
+        vodGroupSet.add(group);
+      } else if (contentType === 'series') {
+        series.push(item);
+        seriesGroupSet.add(group);
+      } else {
+        channels.push(item);
+        liveGroupSet.add(group);
+      }
+
       currentAttrs = null;
     } else if (line === '' || line.startsWith('#')) {
       // Skip empty lines and other comments, but don't reset currentAttrs
@@ -45,9 +123,11 @@ function parseM3U(text) {
     }
   }
 
-  const groups = Array.from(groupSet).sort((a, b) => a.localeCompare(b));
+  const groups = Array.from(liveGroupSet).sort((a, b) => a.localeCompare(b));
+  const vodGroups = Array.from(vodGroupSet).sort((a, b) => a.localeCompare(b));
+  const seriesGroups = Array.from(seriesGroupSet).sort((a, b) => a.localeCompare(b));
 
-  return { epgUrl, channels, groups };
+  return { epgUrl, channels, groups, vods, vodGroups, series, seriesGroups };
 }
 
 function parseExtInf(line) {
@@ -79,7 +159,7 @@ function generateId(tvgId, url) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return 'ch_' + Math.abs(hash).toString(36);

@@ -50,6 +50,7 @@ M3U.PlayerPanel = class {
     this.muteBtn = this.controlsEl.querySelector('.ctrl-mute');
     this.volumeSlider = this.controlsEl.querySelector('.volume-slider');
     this.fullscreenBtn = this.controlsEl.querySelector('.ctrl-fullscreen');
+    this.pipBtn = this.controlsEl.querySelector('.ctrl-pip');
     const closeBtn = this.el.querySelector('.player-close-btn');
 
     this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
@@ -60,15 +61,31 @@ M3U.PlayerPanel = class {
       this.updateVolumeIcon();
     });
     this.fullscreenBtn?.addEventListener('click', () => this.toggleFullscreen());
+    this.pipBtn?.addEventListener('click', () => this.togglePip());
     closeBtn?.addEventListener('click', () => this.close());
 
     this.video.addEventListener('play', () => this.updatePlayPauseIcon());
     this.video.addEventListener('pause', () => this.updatePlayPauseIcon());
 
+    // PiP events
+    this.video.addEventListener('enterpictureinpicture', () => {
+      this.pipBtn?.classList.add('active');
+    });
+    this.video.addEventListener('leavepictureinpicture', () => {
+      this.pipBtn?.classList.remove('active');
+    });
+
+    // Hide PiP button if not supported
+    if (!document.pictureInPictureEnabled) {
+      this.pipBtn?.classList.add('hidden');
+    }
+
     // Sync initial volume
-    window.electronAPI.getSettings().then(s => {
+    window.electronAPI.getSettings().then((s) => {
       this.video.volume = s.volume || 0.8;
-      if (this.volumeSlider) this.volumeSlider.value = this.video.volume;
+      if (this.volumeSlider) {
+        this.volumeSlider.value = this.video.volume;
+      }
     });
   }
 
@@ -77,14 +94,20 @@ M3U.PlayerPanel = class {
   setupFullscreen() {
     // Double-click video to toggle fullscreen
     this.videoContainer.addEventListener('dblclick', (e) => {
-      if (e.target.closest('.fs-bottom')) return;
+      if (e.target.closest('.fs-bottom')) {
+        return;
+      }
       this.toggleFullscreen();
     });
 
     // Single click to toggle play/pause (only in fullscreen)
     this.videoContainer.addEventListener('click', (e) => {
-      if (e.target.closest('.fs-bottom')) return;
-      if (e.target.closest('.player-error-overlay')) return;
+      if (e.target.closest('.fs-bottom')) {
+        return;
+      }
+      if (e.target.closest('.player-error-overlay')) {
+        return;
+      }
       if (document.fullscreenElement) {
         this.togglePlayPause();
         this._showFsControls();
@@ -102,10 +125,14 @@ M3U.PlayerPanel = class {
     const fsBottom = this.controlsOverlay?.querySelector('.fs-bottom');
     if (fsBottom) {
       fsBottom.addEventListener('mouseenter', () => {
-        if (document.fullscreenElement) this._clearFsHideTimer();
+        if (document.fullscreenElement) {
+          this._clearFsHideTimer();
+        }
       });
       fsBottom.addEventListener('mouseleave', () => {
-        if (document.fullscreenElement) this._scheduleFsHide();
+        if (document.fullscreenElement) {
+          this._scheduleFsHide();
+        }
       });
     }
 
@@ -128,8 +155,12 @@ M3U.PlayerPanel = class {
   }
 
   _hideFsControls() {
-    if (this._isSeeking) return;
-    if (this.video.paused) return; // Keep visible when paused
+    if (this._isSeeking) {
+      return;
+    }
+    if (this.video.paused) {
+      return;
+    } // Keep visible when paused
     this.videoContainer.classList.remove('controls-visible');
     this._fsControlsVisible = false;
   }
@@ -149,7 +180,9 @@ M3U.PlayerPanel = class {
   /* ── Seek bar ─────────────────────────────────────────── */
 
   setupSeek() {
-    if (!this.seekSlider) return;
+    if (!this.seekSlider) {
+      return;
+    }
 
     this.seekSlider.addEventListener('input', () => {
       this._isSeeking = true;
@@ -216,7 +249,9 @@ M3U.PlayerPanel = class {
   }
 
   _fmtTime(sec) {
-    if (!sec || !isFinite(sec)) return '0:00';
+    if (!sec || !isFinite(sec)) {
+      return '0:00';
+    }
     sec = Math.floor(sec);
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
@@ -231,52 +266,76 @@ M3U.PlayerPanel = class {
 
   setupKeyboard() {
     document.addEventListener('keydown', (e) => {
-      if (!this.currentChannel) return;
-      if (e.target.tagName === 'INPUT') return;
+      if (!this.currentChannel) {
+        return;
+      }
+      if (e.target.tagName === 'INPUT') {
+        return;
+      }
 
       switch (e.key) {
         case ' ':
           e.preventDefault();
           this.togglePlayPause();
-          if (document.fullscreenElement) this._showFsControls();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'm':
         case 'M':
           this.toggleMute();
-          if (document.fullscreenElement) this._showFsControls();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'f':
         case 'F':
           this.toggleFullscreen();
+          break;
+        case 'p':
+        case 'P':
+          this.togglePip();
           break;
         case 'ArrowLeft':
           e.preventDefault();
           if (this.video.duration && isFinite(this.video.duration)) {
             this.video.currentTime = Math.max(0, this.video.currentTime - 10);
           }
-          if (document.fullscreenElement) this._showFsControls();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'ArrowRight':
           e.preventDefault();
           if (this.video.duration && isFinite(this.video.duration)) {
             this.video.currentTime = Math.min(this.video.duration, this.video.currentTime + 10);
           }
-          if (document.fullscreenElement) this._showFsControls();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
           this.video.volume = Math.min(1, this.video.volume + 0.05);
           this.video.muted = false;
-          if (this.volumeSlider) this.volumeSlider.value = this.video.volume;
+          if (this.volumeSlider) {
+            this.volumeSlider.value = this.video.volume;
+          }
           this.updateVolumeIcon();
-          if (document.fullscreenElement) this._showFsControls();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'ArrowDown':
           e.preventDefault();
           this.video.volume = Math.max(0, this.video.volume - 0.05);
-          if (this.volumeSlider) this.volumeSlider.value = this.video.volume;
+          if (this.volumeSlider) {
+            this.volumeSlider.value = this.video.volume;
+          }
           this.updateVolumeIcon();
-          if (document.fullscreenElement) this._showFsControls();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'Escape':
           if (document.fullscreenElement) {
@@ -292,17 +351,25 @@ M3U.PlayerPanel = class {
   /* ── Position Save / Restore ─────────────────────────── */
 
   _saveCurrentPosition() {
-    if (!this.currentChannel) return;
-    if (this.currentChannel.type === 'live') return;
+    if (!this.currentChannel) {
+      return;
+    }
+    if (this.currentChannel.type === 'live') {
+      return;
+    }
     const dur = this.video.duration;
     const pos = this.video.currentTime;
-    if (!dur || !isFinite(dur) || dur < 1) return;
+    if (!dur || !isFinite(dur) || dur < 1) {
+      return;
+    }
     window.electronAPI.savePlaybackPosition(this.currentChannel.url, pos, dur);
   }
 
   _startPositionSave(isVod) {
     this._stopPositionSave();
-    if (!isVod) return;
+    if (!isVod) {
+      return;
+    }
     // Save every 10 seconds
     this._savePositionInterval = setInterval(() => this._saveCurrentPosition(), 10000);
   }
@@ -325,7 +392,9 @@ M3U.PlayerPanel = class {
         };
         this.video.addEventListener('canplay', onCanPlay);
       }
-    } catch {}
+    } catch {
+      // Position restore is non-critical
+    }
   }
 
   _saveLastWatched(channel) {
@@ -413,7 +482,9 @@ M3U.PlayerPanel = class {
             if (!this._hlsRetried) {
               this._hlsRetried = true;
               setTimeout(() => {
-                if (this.hls) this.hls.startLoad();
+                if (this.hls) {
+                  this.hls.startLoad();
+                }
               }, 2000);
             } else if (canFallbackDirect) {
               this._fallbackDirect(url);
@@ -422,7 +493,9 @@ M3U.PlayerPanel = class {
             }
             break;
           case Hls.ErrorTypes.MEDIA_ERROR:
-            if (this.hls) this.hls.recoverMediaError();
+            if (this.hls) {
+              this.hls.recoverMediaError();
+            }
             break;
           default:
             if (canFallbackDirect) {
@@ -487,7 +560,10 @@ M3U.PlayerPanel = class {
 
   close() {
     if (document.fullscreenElement) {
-      document.exitFullscreen().then(() => this._doClose()).catch(() => this._doClose());
+      document
+        .exitFullscreen()
+        .then(() => this._doClose())
+        .catch(() => this._doClose());
     } else {
       this._doClose();
     }
@@ -523,15 +599,34 @@ M3U.PlayerPanel = class {
     }
   }
 
+  async togglePip() {
+    if (!document.pictureInPictureEnabled) {
+      return;
+    }
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (this.video.readyState >= 2) {
+        await this.video.requestPictureInPicture();
+      }
+    } catch {
+      // PiP failed, ignore
+    }
+  }
+
   updatePlayPauseIcon() {
-    if (!this.playPauseBtn) return;
+    if (!this.playPauseBtn) {
+      return;
+    }
     this.playPauseBtn.innerHTML = M3U.dom.svgIcon(
       this.video.paused ? M3U.icons.play : M3U.icons.pause
     );
   }
 
   updateVolumeIcon() {
-    if (!this.muteBtn) return;
+    if (!this.muteBtn) {
+      return;
+    }
     this.muteBtn.innerHTML = M3U.dom.svgIcon(
       this.video.muted ? M3U.icons.volumeX : M3U.icons.volume2
     );
@@ -554,17 +649,21 @@ M3U.PlayerPanel = class {
       const img = M3U.dom.el('img', { src: ch.logo });
       img.onerror = () => {
         img.remove();
-        logoWrap.appendChild(M3U.dom.el('span', {
-          className: 'channel-logo-fallback',
-          textContent: ch.name.charAt(0).toUpperCase()
-        }));
+        logoWrap.appendChild(
+          M3U.dom.el('span', {
+            className: 'channel-logo-fallback',
+            textContent: ch.name.charAt(0).toUpperCase()
+          })
+        );
       };
       logoWrap.appendChild(img);
     } else {
-      logoWrap.appendChild(M3U.dom.el('span', {
-        className: 'channel-logo-fallback',
-        textContent: ch.name.charAt(0).toUpperCase()
-      }));
+      logoWrap.appendChild(
+        M3U.dom.el('span', {
+          className: 'channel-logo-fallback',
+          textContent: ch.name.charAt(0).toUpperCase()
+        })
+      );
     }
 
     this.channelInfoEl.querySelector('.name').textContent = ch.name;
@@ -572,7 +671,9 @@ M3U.PlayerPanel = class {
   }
 
   updateEpg() {
-    if (!this.currentChannel) return;
+    if (!this.currentChannel) {
+      return;
+    }
     const now = this.epgService.getCurrentProgram(this.currentChannel.tvgId);
     const next = this.epgService.getNextProgram(this.currentChannel.tvgId);
 

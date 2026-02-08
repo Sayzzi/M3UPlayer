@@ -11,10 +11,16 @@ function apiRequest(url, timeoutMs = 30000) {
     const net = getNet();
     const req = net.request({ url, method: 'GET', redirect: 'follow', useSessionCookies: true });
 
-    req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+    req.setHeader(
+      'User-Agent',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    );
     req.setHeader('Accept', 'application/json, */*');
 
-    const timer = setTimeout(() => { req.abort(); reject(new Error('Request timed out')); }, timeoutMs);
+    const timer = setTimeout(() => {
+      req.abort();
+      reject(new Error('Request timed out'));
+    }, timeoutMs);
     const chunks = [];
 
     req.on('response', (response) => {
@@ -27,10 +33,16 @@ function apiRequest(url, timeoutMs = 30000) {
         }
         resolve(buffer);
       });
-      response.on('error', (err) => { clearTimeout(timer); reject(err); });
+      response.on('error', (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
     });
 
-    req.on('error', (err) => { clearTimeout(timer); reject(err); });
+    req.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
     req.end();
   });
 }

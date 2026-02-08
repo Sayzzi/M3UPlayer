@@ -14,7 +14,13 @@ M3U.Toast = class {
     }, duration);
   }
 
-  success(message) { this.show(message, 'success'); }
-  error(message) { this.show(message, 'error'); }
-  info(message) { this.show(message, 'info'); }
+  success(message) {
+    this.show(message, 'success');
+  }
+  error(message) {
+    this.show(message, 'error');
+  }
+  info(message) {
+    this.show(message, 'info');
+  }
 };

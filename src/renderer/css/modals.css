@@ -15,8 +15,12 @@
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -40,8 +44,14 @@
 }
 
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(16px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Header ── */
@@ -185,12 +195,108 @@
 
 .form-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim), 0 0 16px rgba(232, 168, 56, 0.06);
+  box-shadow:
+    0 0 0 3px var(--accent-dim),
+    0 0 16px rgba(232, 168, 56, 0.06);
   background: var(--bg-elevated);
 }
 
 .form-input::placeholder {
   color: var(--text-muted);
+}
+
+.form-select {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239d9db5' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.form-select:hover {
+  border-color: var(--border-light);
+}
+
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  background-color: var(--bg-elevated);
+}
+
+.form-select option {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.range-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-range {
+  flex: 1;
+  height: 4px;
+  padding: 4px 0;
+  border: none;
+  outline: none;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  -webkit-appearance: none;
+}
+
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(232, 168, 56, 0.3);
+  transition: all var(--transition);
+}
+
+.form-range::-webkit-slider-thumb:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 12px rgba(232, 168, 56, 0.4);
+}
+
+.form-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(232, 168, 56, 0.3);
+  transition: all var(--transition);
+}
+
+.form-range::-moz-range-thumb:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 12px rgba(232, 168, 56, 0.4);
+}
+
+.range-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+  font-family: var(--font-mono);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -407,32 +513,50 @@
   background: linear-gradient(135deg, var(--bg-elevated), rgba(239, 100, 97, 0.06));
 }
 
-.toast-error svg { color: var(--error); }
+.toast-error svg {
+  color: var(--error);
+}
 
 .toast-success {
   border-color: rgba(61, 214, 140, 0.3);
   background: linear-gradient(135deg, var(--bg-elevated), rgba(61, 214, 140, 0.06));
 }
 
-.toast-success svg { color: var(--success); }
+.toast-success svg {
+  color: var(--success);
+}
 
 .toast-warning {
   border-color: rgba(240, 180, 41, 0.3);
   background: linear-gradient(135deg, var(--bg-elevated), rgba(240, 180, 41, 0.06));
 }
 
-.toast-warning svg { color: var(--warning); }
+.toast-warning svg {
+  color: var(--warning);
+}
 
 .toast.removing {
   animation: toastSlideOut 0.25s var(--ease-out) forwards;
 }
 
 @keyframes toastSlideIn {
-  from { transform: translateX(110%); opacity: 0; }
-  to   { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes toastSlideOut {
-  from { transform: translateX(0); opacity: 1; }
-  to   { transform: translateX(110%); opacity: 0; }
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(110%);
+    opacity: 0;
+  }
 }

@@ -19,7 +19,10 @@ function request(url, timeoutMs = 30000) {
       useSessionCookies: true
     });
 
-    req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+    req.setHeader(
+      'User-Agent',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    );
     req.setHeader('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
     req.setHeader('Accept-Language', 'en-US,en;q=0.9');
 
@@ -73,7 +76,7 @@ async function fetchPlaylist(url) {
     buffer = result.buffer;
     statusCode = result.statusCode;
   } catch (err) {
-    throw new Error(`Connection failed: ${err.message}`);
+    throw new Error(`Connection failed: ${err.message}`, { cause: err });
   }
 
   // If we got a non-standard error code (like 884) with no useful body,
@@ -89,14 +92,16 @@ async function fetchPlaylist(url) {
           statusCode = result.statusCode;
           break;
         }
-      } catch (_) {
+      } catch {
         // Continue to next alternative
       }
     }
   }
 
   if (buffer.length === 0) {
-    throw new Error(`Server returned HTTP ${statusCode} with empty response. Try a different DNS/server URL from your provider.`);
+    throw new Error(
+      `Server returned HTTP ${statusCode} with empty response. Try a different DNS/server URL from your provider.`
+    );
   }
 
   let text = buffer.toString('utf-8');
@@ -133,7 +138,7 @@ function tryAlternativeHosts(url) {
       }
     }
     return alternatives;
-  } catch (_) {
+  } catch {
     return [];
   }
 }
@@ -143,9 +148,10 @@ async function fetchEpg(url) {
 
   const contentType = Array.isArray(headers['content-type'])
     ? headers['content-type'][0]
-    : (headers['content-type'] || '');
+    : headers['content-type'] || '';
 
-  const isGzipped = url.endsWith('.gz') ||
+  const isGzipped =
+    url.endsWith('.gz') ||
     contentType.includes('gzip') ||
     (buffer.length > 2 && buffer[0] === 0x1f && buffer[1] === 0x8b);
 

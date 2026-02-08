@@ -25,15 +25,15 @@ M3U.Sidebar = class {
     this.seriesGroups = seriesGroups || [];
 
     this.channelCounts = { all: (channels || []).length };
-    for (const ch of (channels || [])) {
+    for (const ch of channels || []) {
       this.channelCounts[ch.group] = (this.channelCounts[ch.group] || 0) + 1;
     }
     this.vodCounts = { all: (vods || []).length };
-    for (const v of (vods || [])) {
+    for (const v of vods || []) {
       this.vodCounts[v.group] = (this.vodCounts[v.group] || 0) + 1;
     }
     this.seriesCounts = { all: (series || []).length };
-    for (const s of (series || [])) {
+    for (const s of series || []) {
       this.seriesCounts[s.group] = (this.seriesCounts[s.group] || 0) + 1;
     }
 
@@ -57,7 +57,9 @@ M3U.Sidebar = class {
     }
 
     for (const group of currentGroups) {
-      categoriesEl.appendChild(this._createItem(group, M3U.icons.folder, currentCounts[group] || 0, group));
+      categoriesEl.appendChild(
+        this._createItem(group, M3U.icons.folder, currentCounts[group] || 0, group)
+      );
     }
 
     this.updateBadges();
@@ -65,15 +67,19 @@ M3U.Sidebar = class {
   }
 
   _createItem(label, iconPath, count, category) {
-    return M3U.dom.el('div', {
-      className: 'sidebar-item' + (this.activeCategory === category ? ' active' : ''),
-      dataset: { category },
-      onClick: () => this.select(category)
-    }, [
-      M3U.dom.el('span', { innerHTML: M3U.dom.svgIcon(iconPath) }),
-      M3U.dom.el('span', { className: 'sidebar-item-label', textContent: label }),
-      M3U.dom.el('span', { className: 'badge', textContent: String(count) })
-    ]);
+    return M3U.dom.el(
+      'div',
+      {
+        className: 'sidebar-item' + (this.activeCategory === category ? ' active' : ''),
+        dataset: { category },
+        onClick: () => this.select(category)
+      },
+      [
+        M3U.dom.el('span', { innerHTML: M3U.dom.svgIcon(iconPath) }),
+        M3U.dom.el('span', { className: 'sidebar-item-label', textContent: label }),
+        M3U.dom.el('span', { className: 'badge', textContent: String(count) })
+      ]
+    );
   }
 
   select(category) {
@@ -90,20 +96,28 @@ M3U.Sidebar = class {
   }
 
   highlightActive() {
-    this.el.querySelectorAll('.sidebar-item').forEach(item => {
+    this.el.querySelectorAll('.sidebar-item').forEach((item) => {
       item.classList.toggle('active', item.dataset.category === this.activeCategory);
     });
   }
 
   updateBadges() {
     const favBadge = this.el.querySelector('[data-category="__favorites__"] .badge');
-    if (favBadge) favBadge.textContent = String(this.favoritesService.count());
+    if (favBadge) {
+      favBadge.textContent = String(this.favoritesService.count());
+    }
     const histBadge = this.el.querySelector('[data-category="__recent__"] .badge');
-    if (histBadge) histBadge.textContent = String(this.historyService.count());
+    if (histBadge) {
+      histBadge.textContent = String(this.historyService.count());
+    }
     const allBadge = this.el.querySelector('[data-category="all"] .badge');
     if (allBadge) {
-      const counts = this.activeContentType === 'vod' ? this.vodCounts
-        : this.activeContentType === 'series' ? this.seriesCounts : this.channelCounts;
+      const counts =
+        this.activeContentType === 'vod'
+          ? this.vodCounts
+          : this.activeContentType === 'series'
+            ? this.seriesCounts
+            : this.channelCounts;
       allBadge.textContent = String(counts['all'] || 0);
     }
   }
