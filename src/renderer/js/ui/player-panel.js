@@ -43,6 +43,7 @@ M3U.PlayerPanel = class {
     this.setupSeek();
     this.setupKeyboard();
     this.setupFullscreen();
+    this.setupSubtitles();
   }
 
   setupControls() {
@@ -51,6 +52,7 @@ M3U.PlayerPanel = class {
     this.volumeSlider = this.controlsEl.querySelector('.volume-slider');
     this.fullscreenBtn = this.controlsEl.querySelector('.ctrl-fullscreen');
     this.pipBtn = this.controlsEl.querySelector('.ctrl-pip');
+    this.subtitlesBtn = this.controlsEl.querySelector('.ctrl-subtitles');
     const closeBtn = this.el.querySelector('.player-close-btn');
 
     this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
@@ -62,6 +64,7 @@ M3U.PlayerPanel = class {
     });
     this.fullscreenBtn?.addEventListener('click', () => this.toggleFullscreen());
     this.pipBtn?.addEventListener('click', () => this.togglePip());
+    this.subtitlesBtn?.addEventListener('click', () => this.showSubtitlesMenu());
     closeBtn?.addEventListener('click', () => this.close());
 
     this.video.addEventListener('play', () => this.updatePlayPauseIcon());
@@ -295,6 +298,13 @@ M3U.PlayerPanel = class {
         case 'p':
         case 'P':
           this.togglePip();
+          break;
+        case 'c':
+        case 'C':
+          this.toggleSubtitles();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
           break;
         case 'ArrowLeft':
           e.preventDefault();
@@ -549,6 +559,8 @@ M3U.PlayerPanel = class {
     }
     this._stopSeekUpdate();
     this._clearFsHideTimer();
+    this._clearSubtitles();
+    this._closeSubtitleMenu();
     if (this.hls) {
       this.hls.destroy();
       this.hls = null;
@@ -712,5 +724,227 @@ M3U.PlayerPanel = class {
       clearInterval(this.epgInterval);
       this.epgInterval = null;
     }
+  }
+
+  /* ── Subtitles ─────────────────────────────────────────── */
+
+  setupSubtitles() {
+    this.subtitleFileInput = document.getElementById('subtitle-file-input');
+    this._subtitlesEnabled = true;
+    this._subtitleMenu = null;
+
+    this.subtitleFileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        this.loadSubtitleFile(file);
+      }
+      // Reset input so same file can be selected again
+      e.target.value = '';
+    });
+  }
+
+  showSubtitlesMenu() {
+    // Remove existing menu if any
+    this._closeSubtitleMenu();
+
+    const tracks = this._getSubtitleTracks();
+    const menu = M3U.dom.el('div', { className: 'subtitle-menu' });
+
+    // Header
+    menu.appendChild(
+      M3U.dom.el('div', { className: 'subtitle-menu-header', textContent: 'Subtitles' })
+    );
+
+    // Off option
+    const offItem = M3U.dom.el('div', {
+      className: 'subtitle-menu-item' + (!this._subtitlesEnabled ? ' active' : ''),
+      textContent: 'Off',
+      onClick: () => {
+        this.disableSubtitles();
+        this._closeSubtitleMenu();
+      }
+    });
+    menu.appendChild(offItem);
+
+    // Existing tracks
+    tracks.forEach((track, index) => {
+      const isActive = this._subtitlesEnabled && track.mode === 'showing';
+      const item = M3U.dom.el('div', {
+        className: 'subtitle-menu-item' + (isActive ? ' active' : ''),
+        textContent: track.label || `Track ${index + 1}`,
+        onClick: () => {
+          this.selectSubtitleTrack(index);
+          this._closeSubtitleMenu();
+        }
+      });
+      menu.appendChild(item);
+    });
+
+    // Separator
+    menu.appendChild(M3U.dom.el('div', { className: 'subtitle-menu-sep' }));
+
+    // Load file option
+    const loadItem = M3U.dom.el('div', {
+      className: 'subtitle-menu-item subtitle-load',
+      textContent: '+ Load subtitle file...',
+      onClick: () => {
+        this.subtitleFileInput?.click();
+        this._closeSubtitleMenu();
+      }
+    });
+    menu.appendChild(loadItem);
+
+    // Position menu near button
+    this.videoContainer.appendChild(menu);
+    this._subtitleMenu = menu;
+
+    // Close on click outside
+    setTimeout(() => {
+      document.addEventListener('click', this._onSubtitleMenuClickOutside);
+    }, 0);
+  }
+
+  _onSubtitleMenuClickOutside = (e) => {
+    if (this._subtitleMenu && !this._subtitleMenu.contains(e.target) && e.target !== this.subtitlesBtn) {
+      this._closeSubtitleMenu();
+    }
+  };
+
+  _closeSubtitleMenu() {
+    if (this._subtitleMenu) {
+      this._subtitleMenu.remove();
+      this._subtitleMenu = null;
+    }
+    document.removeEventListener('click', this._onSubtitleMenuClickOutside);
+  }
+
+  _getSubtitleTracks() {
+    const tracks = [];
+    for (let i = 0; i < this.video.textTracks.length; i++) {
+      const track = this.video.textTracks[i];
+      if (track.kind === 'subtitles' || track.kind === 'captions') {
+        tracks.push(track);
+      }
+    }
+    return tracks;
+  }
+
+  selectSubtitleTrack(index) {
+    const tracks = this._getSubtitleTracks();
+    tracks.forEach((track, i) => {
+      track.mode = i === index ? 'showing' : 'hidden';
+    });
+    this._subtitlesEnabled = true;
+    this.subtitlesBtn?.classList.add('active');
+  }
+
+  disableSubtitles() {
+    const tracks = this._getSubtitleTracks();
+    tracks.forEach((track) => {
+      track.mode = 'hidden';
+    });
+    this._subtitlesEnabled = false;
+    this.subtitlesBtn?.classList.remove('active');
+  }
+
+  toggleSubtitles() {
+    if (this._subtitlesEnabled) {
+      this.disableSubtitles();
+    } else {
+      // Enable first available track
+      const tracks = this._getSubtitleTracks();
+      if (tracks.length > 0) {
+        this.selectSubtitleTrack(0);
+      } else {
+        // No tracks, prompt to load file
+        this.subtitleFileInput?.click();
+      }
+    }
+  }
+
+  async loadSubtitleFile(file) {
+    try {
+      const text = await file.text();
+      let vttContent = text;
+
+      // Convert SRT to VTT if needed
+      if (file.name.toLowerCase().endsWith('.srt')) {
+        vttContent = this._srtToVtt(text);
+      }
+
+      // Remove existing loaded subtitles
+      const existingTrack = this.video.querySelector('track[data-loaded]');
+      if (existingTrack) {
+        existingTrack.remove();
+      }
+
+      // Create blob URL for the VTT content
+      const blob = new Blob([vttContent], { type: 'text/vtt' });
+      const url = URL.createObjectURL(blob);
+
+      // Add track element
+      const track = document.createElement('track');
+      track.kind = 'subtitles';
+      track.label = file.name.replace(/\.[^.]+$/, '');
+      track.srclang = 'und';
+      track.src = url;
+      track.dataset.loaded = 'true';
+      track.default = true;
+
+      this.video.appendChild(track);
+
+      // Wait for track to load then enable it
+      track.addEventListener('load', () => {
+        const tracks = this._getSubtitleTracks();
+        const idx = tracks.findIndex((t) => t.label === track.label);
+        if (idx !== -1) {
+          this.selectSubtitleTrack(idx);
+        }
+      });
+
+      M3U.toast?.show(`Subtitles loaded: ${file.name}`, 'success');
+    } catch (err) {
+      console.error('Failed to load subtitle file:', err);
+      M3U.toast?.show('Failed to load subtitle file', 'error');
+    }
+  }
+
+  _srtToVtt(srtContent) {
+    // Convert SRT format to WebVTT
+    let vtt = 'WEBVTT\n\n';
+
+    // Split into blocks and process
+    const blocks = srtContent.trim().replace(/\r\n/g, '\n').split('\n\n');
+
+    for (const block of blocks) {
+      const lines = block.split('\n');
+      if (lines.length < 3) {
+        continue;
+      }
+
+      // Skip the index line, get timestamp line
+      const timestampLine = lines[1];
+      if (!timestampLine || !timestampLine.includes('-->')) {
+        continue;
+      }
+
+      // Convert comma to period in timestamps (SRT uses comma, VTT uses period)
+      const vttTimestamp = timestampLine.replace(/,/g, '.');
+
+      // Get subtitle text (remaining lines)
+      const subtitleText = lines.slice(2).join('\n');
+
+      vtt += `${vttTimestamp}\n${subtitleText}\n\n`;
+    }
+
+    return vtt;
+  }
+
+  _clearSubtitles() {
+    // Remove loaded subtitle tracks
+    const loadedTracks = this.video.querySelectorAll('track[data-loaded]');
+    loadedTracks.forEach((track) => track.remove());
+    this._subtitlesEnabled = false;
+    this.subtitlesBtn?.classList.remove('active');
   }
 };
