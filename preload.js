@@ -44,12 +44,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (settings) => ipcRenderer.invoke('settings:update', settings),
 
-  // Subtitles
-  searchSubtitles: (query, language, type) =>
-    ipcRenderer.invoke('subtitles:search', query, language, type),
-  fetchSubtitle: (query, language, type) =>
-    ipcRenderer.invoke('subtitles:fetch', query, language, type),
-
   // App lifecycle
   appReady: () => ipcRenderer.send('app:ready')
 });

@@ -4,7 +4,6 @@ const { parseM3U } = require('./m3u-parser');
 const { parseEpg } = require('./epg-parser');
 const { fetchPlaylist, fetchEpg } = require('./playlist-fetcher');
 const { xtreamLoadAll } = require('./xtream-client');
-const { searchSubtitles, fetchSubtitle, cleanTitle } = require('./opensubtitles');
 
 function registerIpcHandlers() {
   // Playlist operations
@@ -119,25 +118,6 @@ function registerIpcHandlers() {
 
   ipcMain.handle('settings:update', (_event, settings) => {
     return store.updateSettings(settings);
-  });
-
-  // Subtitles (OpenSubtitles)
-  ipcMain.handle('subtitles:search', async (_event, query, language, type) => {
-    try {
-      return await searchSubtitles(query, language || 'fr', type);
-    } catch (err) {
-      console.error('Subtitle search error:', err);
-      return [];
-    }
-  });
-
-  ipcMain.handle('subtitles:fetch', async (_event, query, language, type) => {
-    try {
-      return await fetchSubtitle(query, language || 'fr', type);
-    } catch (err) {
-      console.error('Subtitle fetch error:', err);
-      throw err;
-    }
   });
 }
 
