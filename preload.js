@@ -27,6 +27,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadEpg: (url) => ipcRenderer.invoke('epg:load', url),
   parseEpg: (xmlText) => ipcRenderer.invoke('epg:parse', xmlText),
 
+  // Playback positions (resume VOD/Series)
+  savePlaybackPosition: (channelId, position, duration) => ipcRenderer.invoke('playback:save', channelId, position, duration),
+  getPlaybackPosition: (channelId) => ipcRenderer.invoke('playback:get', channelId),
+
+  // Last watched channel
+  getLastWatched: () => ipcRenderer.invoke('lastWatched:get'),
+  setLastWatched: (channel) => ipcRenderer.invoke('lastWatched:set', channel),
+
   // Settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (settings) => ipcRenderer.invoke('settings:update', settings),

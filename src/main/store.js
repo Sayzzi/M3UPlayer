@@ -6,6 +6,8 @@ const store = new Conf({
     activePlaylistId: null,
     favorites: [],
     history: [],
+    playbackPositions: {},
+    lastWatched: null,
     settings: {
       volume: 0.8
     }
@@ -90,6 +92,46 @@ function addToHistory(entry) {
   return history;
 }
 
+// Playback positions (VOD/Series resume)
+function getPlaybackPositions() {
+  return store.get('playbackPositions') || {};
+}
+
+function savePlaybackPosition(channelId, position, duration) {
+  const positions = getPlaybackPositions();
+  // Only save if progress > 1% and < 95% (not finished)
+  const pct = duration > 0 ? position / duration : 0;
+  if (pct > 0.01 && pct < 0.95) {
+    positions[channelId] = { position, duration, savedAt: Date.now() };
+  } else {
+    // Remove if finished or not started
+    delete positions[channelId];
+  }
+  // Keep max 200 entries, remove oldest
+  const keys = Object.keys(positions);
+  if (keys.length > 200) {
+    const sorted = keys.sort((a, b) => (positions[a].savedAt || 0) - (positions[b].savedAt || 0));
+    for (let i = 0; i < keys.length - 200; i++) {
+      delete positions[sorted[i]];
+    }
+  }
+  store.set('playbackPositions', positions);
+}
+
+function getPlaybackPosition(channelId) {
+  const positions = getPlaybackPositions();
+  return positions[channelId] || null;
+}
+
+// Last watched channel (restore on app launch)
+function getLastWatched() {
+  return store.get('lastWatched') || null;
+}
+
+function setLastWatched(channel) {
+  store.set('lastWatched', channel);
+}
+
 function getSettings() {
   return store.get('settings') || { volume: 0.8 };
 }
@@ -111,6 +153,11 @@ module.exports = {
   toggleFavorite,
   getHistory,
   addToHistory,
+  getPlaybackPositions,
+  savePlaybackPosition,
+  getPlaybackPosition,
+  getLastWatched,
+  setLastWatched,
   getSettings,
   updateSettings
 };

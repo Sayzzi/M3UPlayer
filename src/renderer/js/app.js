@@ -131,6 +131,19 @@ window.M3U = window.M3U || {};
     modalManager.showAddPlaylist();
   }
 
+  // Restore last watched channel after playlist loads
+  if (activePlaylist) {
+    try {
+      const lastWatched = await window.electronAPI.getLastWatched();
+      if (lastWatched && lastWatched.url) {
+        // Small delay to let playlist finish loading
+        setTimeout(() => {
+          playerPanel.play(lastWatched);
+        }, 500);
+      }
+    } catch {}
+  }
+
   // Signal main process that app is ready (closes splash screen)
   window.electronAPI.appReady();
 })();

@@ -36,6 +36,9 @@ M3U.PlayerPanel = class {
     this._fsHideTimer = null;
     this._fsControlsVisible = false;
 
+    // Playback position save interval
+    this._savePositionInterval = null;
+
     this.setupControls();
     this.setupSeek();
     this.setupKeyboard();
@@ -286,6 +289,58 @@ M3U.PlayerPanel = class {
     });
   }
 
+  /* ── Position Save / Restore ─────────────────────────── */
+
+  _saveCurrentPosition() {
+    if (!this.currentChannel) return;
+    if (this.currentChannel.type === 'live') return;
+    const dur = this.video.duration;
+    const pos = this.video.currentTime;
+    if (!dur || !isFinite(dur) || dur < 1) return;
+    window.electronAPI.savePlaybackPosition(this.currentChannel.url, pos, dur);
+  }
+
+  _startPositionSave(isVod) {
+    this._stopPositionSave();
+    if (!isVod) return;
+    // Save every 10 seconds
+    this._savePositionInterval = setInterval(() => this._saveCurrentPosition(), 10000);
+  }
+
+  _stopPositionSave() {
+    if (this._savePositionInterval) {
+      clearInterval(this._savePositionInterval);
+      this._savePositionInterval = null;
+    }
+  }
+
+  async _restorePosition(channel) {
+    try {
+      const saved = await window.electronAPI.getPlaybackPosition(channel.url);
+      if (saved && saved.position > 5) {
+        // Wait for video to be ready enough to seek
+        const onCanPlay = () => {
+          this.video.removeEventListener('canplay', onCanPlay);
+          this.video.currentTime = saved.position;
+        };
+        this.video.addEventListener('canplay', onCanPlay);
+      }
+    } catch {}
+  }
+
+  _saveLastWatched(channel) {
+    const data = {
+      name: channel.name,
+      url: channel.url,
+      type: channel.type || 'live',
+      logo: channel.logo || '',
+      group: channel.group || '',
+      tvgId: channel.tvgId || '',
+      channelId: channel.channelId || ''
+    };
+    window.electronAPI.setLastWatched(data);
+  }
+
   /* ── Playback ─────────────────────────────────────────── */
 
   play(channel) {
@@ -322,6 +377,17 @@ M3U.PlayerPanel = class {
     } else {
       this._playDirect(url);
     }
+
+    // Restore saved position for VOD/Series
+    if (isVod) {
+      this._restorePosition(channel);
+    }
+
+    // Save position periodically for VOD/Series
+    this._startPositionSave(isVod);
+
+    // Save as last watched channel
+    this._saveLastWatched(channel);
 
     this.updateChannelInfo(channel);
     this.updateEpg();
@@ -400,6 +466,10 @@ M3U.PlayerPanel = class {
   }
 
   stop() {
+    // Save position before stopping
+    this._saveCurrentPosition();
+    this._stopPositionSave();
+
     if (this._manifestTimeout) {
       clearTimeout(this._manifestTimeout);
       this._manifestTimeout = null;

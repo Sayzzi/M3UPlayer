@@ -80,6 +80,26 @@ function registerIpcHandlers() {
     return data;
   });
 
+  // Playback positions (resume VOD/Series)
+  ipcMain.handle('playback:save', (_event, channelId, position, duration) => {
+    store.savePlaybackPosition(channelId, position, duration);
+    return true;
+  });
+
+  ipcMain.handle('playback:get', (_event, channelId) => {
+    return store.getPlaybackPosition(channelId);
+  });
+
+  // Last watched channel
+  ipcMain.handle('lastWatched:get', () => {
+    return store.getLastWatched();
+  });
+
+  ipcMain.handle('lastWatched:set', (_event, channel) => {
+    store.setLastWatched(channel);
+    return true;
+  });
+
   // Settings
   ipcMain.handle('settings:get', () => {
     return store.getSettings();
