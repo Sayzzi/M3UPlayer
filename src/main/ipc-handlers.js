@@ -4,7 +4,7 @@ const { parseM3U } = require('./m3u-parser');
 const { parseEpg } = require('./epg-parser');
 const { fetchPlaylist, fetchEpg } = require('./playlist-fetcher');
 const { xtreamLoadAll } = require('./xtream-client');
-const { searchSubtitles, fetchSubtitle } = require('./opensubtitles');
+const { searchSubtitles, fetchSubtitle, cleanTitle } = require('./opensubtitles');
 
 function registerIpcHandlers() {
   // Playlist operations
