@@ -43,6 +43,7 @@ M3U.PlayerPanel = class {
     this.setupSeek();
     this.setupKeyboard();
     this.setupFullscreen();
+    this.setupSubtitles();
   }
 
   setupControls() {
@@ -51,6 +52,7 @@ M3U.PlayerPanel = class {
     this.volumeSlider = this.controlsEl.querySelector('.volume-slider');
     this.fullscreenBtn = this.controlsEl.querySelector('.ctrl-fullscreen');
     this.pipBtn = this.controlsEl.querySelector('.ctrl-pip');
+    this.subtitlesBtn = this.controlsEl.querySelector('.ctrl-subtitles');
     const closeBtn = this.el.querySelector('.player-close-btn');
 
     this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
@@ -62,6 +64,7 @@ M3U.PlayerPanel = class {
     });
     this.fullscreenBtn?.addEventListener('click', () => this.toggleFullscreen());
     this.pipBtn?.addEventListener('click', () => this.togglePip());
+    this.subtitlesBtn?.addEventListener('click', () => this.showSubtitlesMenu());
     closeBtn?.addEventListener('click', () => this.close());
 
     this.video.addEventListener('play', () => this.updatePlayPauseIcon());
@@ -296,6 +299,13 @@ M3U.PlayerPanel = class {
         case 'P':
           this.togglePip();
           break;
+        case 'c':
+        case 'C':
+          this.toggleSubtitles();
+          if (document.fullscreenElement) {
+            this._showFsControls();
+          }
+          break;
         case 'ArrowLeft':
           e.preventDefault();
           if (this.video.duration && isFinite(this.video.duration)) {
@@ -474,6 +484,10 @@ M3U.PlayerPanel = class {
     this.hls.attachMedia(this.video);
     this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
       this.video.play().catch(() => {});
+      // Detect embedded subtitle tracks
+      if (this.hls.subtitleTracks && this.hls.subtitleTracks.length > 0) {
+        this.subtitlesBtn?.classList.add('has-tracks');
+      }
     });
     this.hls.on(Hls.Events.ERROR, (_event, data) => {
       if (data.fatal) {
@@ -542,6 +556,8 @@ M3U.PlayerPanel = class {
     // Save position before stopping
     this._saveCurrentPosition();
     this._stopPositionSave();
+    this._clearSubtitles();
+    this._closeSubtitleMenu();
 
     if (this._manifestTimeout) {
       clearTimeout(this._manifestTimeout);
@@ -711,6 +727,277 @@ M3U.PlayerPanel = class {
     if (this.epgInterval) {
       clearInterval(this.epgInterval);
       this.epgInterval = null;
+    }
+  }
+
+  /* ── Subtitles ─────────────────────────────────────────── */
+
+  setupSubtitles() {
+    this.subtitleFileInput = document.getElementById('subtitle-file-input');
+    this._subtitlesEnabled = false;
+    this._subtitleMenu = null;
+
+    this._onSubtitleMenuClickOutside = (e) => {
+      if (
+        this._subtitleMenu &&
+        !this._subtitleMenu.contains(e.target) &&
+        e.target !== this.subtitlesBtn &&
+        !this.subtitlesBtn?.contains(e.target)
+      ) {
+        this._closeSubtitleMenu();
+      }
+    };
+
+    this.subtitleFileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        this.loadSubtitleFile(file);
+      }
+      e.target.value = '';
+    });
+  }
+
+  showSubtitlesMenu() {
+    if (this._subtitleMenu) {
+      this._closeSubtitleMenu();
+      return;
+    }
+
+    const menu = document.createElement('div');
+    menu.className = 'subtitle-menu';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'subtitle-menu-header';
+    header.textContent = 'Subtitles';
+    menu.appendChild(header);
+
+    // "Off" option
+    const offItem = document.createElement('div');
+    offItem.className = 'subtitle-menu-item' + (!this._subtitlesEnabled ? ' active' : '');
+    offItem.textContent = 'Off';
+    offItem.addEventListener('click', () => {
+      this.disableSubtitles();
+      this._closeSubtitleMenu();
+    });
+    menu.appendChild(offItem);
+
+    // Existing tracks
+    const tracks = this._getSubtitleTracks();
+    tracks.forEach((track, i) => {
+      const item = document.createElement('div');
+      item.className = 'subtitle-menu-item' + (track.mode === 'showing' ? ' active' : '');
+      item.textContent = track.label || track.language || `Track ${i + 1}`;
+      item.addEventListener('click', () => {
+        this.selectSubtitleTrack(i);
+        this._closeSubtitleMenu();
+      });
+      menu.appendChild(item);
+    });
+
+    // Auto-search options (VOD/Series only)
+    const isVod = this.currentChannel && this.currentChannel.type !== 'live';
+    if (isVod) {
+      const sep1 = document.createElement('div');
+      sep1.className = 'subtitle-menu-sep';
+      menu.appendChild(sep1);
+
+      const searchFr = document.createElement('div');
+      searchFr.className = 'subtitle-menu-item subtitle-search';
+      searchFr.textContent = '\uD83D\uDD0D Rechercher (Fran\u00e7ais)';
+      searchFr.addEventListener('click', () => {
+        this._closeSubtitleMenu();
+        this.searchAndLoadSubtitles('fr');
+      });
+      menu.appendChild(searchFr);
+
+      const searchEn = document.createElement('div');
+      searchEn.className = 'subtitle-menu-item subtitle-search';
+      searchEn.textContent = '\uD83D\uDD0D Search (English)';
+      searchEn.addEventListener('click', () => {
+        this._closeSubtitleMenu();
+        this.searchAndLoadSubtitles('en');
+      });
+      menu.appendChild(searchEn);
+    }
+
+    // Load file option
+    const sep2 = document.createElement('div');
+    sep2.className = 'subtitle-menu-sep';
+    menu.appendChild(sep2);
+
+    const loadItem = document.createElement('div');
+    loadItem.className = 'subtitle-menu-item subtitle-load';
+    loadItem.textContent = 'Load subtitle file...';
+    loadItem.addEventListener('click', () => {
+      this._closeSubtitleMenu();
+      this.subtitleFileInput?.click();
+    });
+    menu.appendChild(loadItem);
+
+    this.videoContainer.appendChild(menu);
+    this._subtitleMenu = menu;
+
+    setTimeout(() => {
+      document.addEventListener('click', this._onSubtitleMenuClickOutside);
+    }, 0);
+  }
+
+  _closeSubtitleMenu() {
+    if (this._subtitleMenu) {
+      this._subtitleMenu.remove();
+      this._subtitleMenu = null;
+    }
+    document.removeEventListener('click', this._onSubtitleMenuClickOutside);
+  }
+
+  _getSubtitleTracks() {
+    const tracks = [];
+    for (let i = 0; i < this.video.textTracks.length; i++) {
+      const t = this.video.textTracks[i];
+      if (t.kind === 'subtitles' || t.kind === 'captions') {
+        tracks.push(t);
+      }
+    }
+    return tracks;
+  }
+
+  selectSubtitleTrack(index) {
+    const tracks = this._getSubtitleTracks();
+    tracks.forEach((t, i) => {
+      t.mode = i === index ? 'showing' : 'hidden';
+    });
+    this._subtitlesEnabled = true;
+    this.subtitlesBtn?.classList.add('active');
+  }
+
+  disableSubtitles() {
+    const tracks = this._getSubtitleTracks();
+    tracks.forEach((t) => {
+      t.mode = 'hidden';
+    });
+    this._subtitlesEnabled = false;
+    this.subtitlesBtn?.classList.remove('active');
+  }
+
+  toggleSubtitles() {
+    const tracks = this._getSubtitleTracks();
+    if (tracks.length === 0) {
+      this.subtitleFileInput?.click();
+      return;
+    }
+    if (this._subtitlesEnabled) {
+      this.disableSubtitles();
+      M3U.toast?.show('Subtitles off', 'info');
+    } else {
+      this.selectSubtitleTrack(tracks.length - 1);
+      const label = tracks[tracks.length - 1].label || 'Subtitles';
+      M3U.toast?.show(`${label} enabled`, 'info');
+    }
+  }
+
+  loadSubtitleFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        let content = e.target.result;
+        const isSrt = file.name.toLowerCase().endsWith('.srt');
+        if (isSrt) {
+          content = this._srtToVtt(content);
+        } else if (!content.trim().startsWith('WEBVTT')) {
+          // Try converting as SRT anyway
+          content = this._srtToVtt(content);
+        }
+        this._addSubtitleTrack(content, file.name);
+        M3U.toast?.show(`Loaded: ${file.name}`, 'success');
+      } catch {
+        M3U.toast?.show('Failed to load subtitle file', 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  _srtToVtt(srt) {
+    let vtt = 'WEBVTT\n\n';
+    const blocks = srt.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n\n');
+    for (const block of blocks) {
+      const lines = block.trim().split('\n');
+      if (lines.length < 2) continue;
+
+      // Find the timestamp line
+      let tsIdx = -1;
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('-->')) {
+          tsIdx = i;
+          break;
+        }
+      }
+      if (tsIdx === -1) continue;
+
+      // Convert commas to dots in timestamps
+      const timestamp = lines[tsIdx].replace(/,/g, '.');
+      const text = lines.slice(tsIdx + 1).join('\n');
+      if (text.trim()) {
+        vtt += `${timestamp}\n${text}\n\n`;
+      }
+    }
+    return vtt;
+  }
+
+  _addSubtitleTrack(vttContent, label) {
+    const blob = new Blob([vttContent], { type: 'text/vtt' });
+    const url = URL.createObjectURL(blob);
+
+    const track = document.createElement('track');
+    track.kind = 'subtitles';
+    track.label = label || 'Subtitles';
+    track.srclang = 'und';
+    track.src = url;
+    track.dataset.loaded = 'true';
+    this.video.appendChild(track);
+
+    // Enable this track
+    const tracks = this._getSubtitleTracks();
+    this.selectSubtitleTrack(tracks.length - 1);
+  }
+
+  _clearSubtitles() {
+    // Remove all loaded tracks
+    const loadedTracks = this.video.querySelectorAll('track[data-loaded]');
+    loadedTracks.forEach((t) => {
+      if (t.src && t.src.startsWith('blob:')) {
+        URL.revokeObjectURL(t.src);
+      }
+      t.remove();
+    });
+    this._subtitlesEnabled = false;
+    this.subtitlesBtn?.classList.remove('active');
+    this.subtitlesBtn?.classList.remove('has-tracks');
+  }
+
+  async searchAndLoadSubtitles(language) {
+    if (!this.currentChannel) return;
+
+    const langLabel = language === 'fr' ? 'fran\u00e7ais' : 'English';
+    M3U.toast?.show(`Searching subtitles (${langLabel})...`, 'info');
+
+    try {
+      const result = await window.electronAPI.fetchSubtitle(
+        this.currentChannel.name,
+        language,
+        this.currentChannel.type || 'movie'
+      );
+
+      if (!result || !result.content) {
+        M3U.toast?.show('No subtitles found', 'warning');
+        return;
+      }
+
+      const vtt = this._srtToVtt(result.content);
+      this._addSubtitleTrack(vtt, `${result.fileName || langLabel}`);
+      M3U.toast?.show(`Subtitles loaded (${langLabel})`, 'success');
+    } catch {
+      M3U.toast?.show('Subtitle search failed', 'error');
     }
   }
 };
